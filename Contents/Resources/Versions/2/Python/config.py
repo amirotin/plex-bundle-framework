@@ -124,6 +124,9 @@ platforms_supporting_real_rtmp  = {
   'Samsung': {
     'Samsung': [0],
   },
+  'Mystery 5': {
+      '*': [0]
+  }
 }
 
 ab_api_key = None
