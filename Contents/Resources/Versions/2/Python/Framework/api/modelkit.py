@@ -18,6 +18,7 @@ class ProxyKit(object):
     self.Preview     = ProxyObjectGenerator('Preview')
     self.Media       = ProxyObjectGenerator('Media')
     self.LocalFile   = ProxyObjectGenerator('LocalFile')
+    self.Remote     = ProxyObjectGenerator('Remote')
     
     
 class ModelKit(BaseKit):

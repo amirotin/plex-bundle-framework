@@ -74,6 +74,8 @@ class Track(MetadataRecord):
 
   extras                    = Template.ObjectContainer(MusicVideo, LyricMusicVideo)
   
+  lyrics                    = Template.ProxyContainer(Template.Proxy.Media, Template.Proxy.Remote, Template.Proxy.LocalFile)
+  
   
 
 class Artist(MetadataModel):

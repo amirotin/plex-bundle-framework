@@ -156,6 +156,9 @@ class ValueObject(AttributeObject, Serializable):
     if content or self._template._allows_null:
       return unicode(content)
 
+  def setcontent(self, content):
+    self._setcontent(content)
+
 
 class StringObject(ValueObject):
   _type = unicode
@@ -434,7 +437,7 @@ class DirectoryObject(MapObject, Serializable, Combinable):
 
 class ProxyObject(object):
 
-  def __init__(self, proxy_name, proxy_type, data, sort_order=None, ext=None, index=None, codec=None, format=None, **kwargs):
+  def __init__(self, proxy_name, proxy_type, data, sort_order=None, ext=None, index=None, codec=None, format=None, default=None, forced=None, **kwargs):
     self._proxy_name = proxy_name
     self._proxy_type = proxy_type
     self._data = data
@@ -443,6 +446,8 @@ class ProxyObject(object):
     self._index = index
     self._codec = codec
     self._format = format
+    self._default = default
+    self._forced = forced
     self._extras = kwargs
     
   def __getitem__(self, name):
@@ -458,10 +463,12 @@ class ProxiedDataObject(DataObject):
     DataObject._init(self)
     self._proxy_type = 'unknown'
     self._sort_order = None
+    self._format = None
   
   def _setcontent(self, content):
     self._proxy_type = content._proxy_type
     self._sort_order = content._sort_order
+    self._format = content._format
     DataObject._setcontent(self, content._data)
   
   
@@ -490,6 +497,13 @@ class ProxyContainerItem(MapItem):
   def _sort_order(self, value):
     self._obj._sort_order = value
 
+  @property
+  def _format(self):
+    return self._obj._format
+
+  @_format.setter
+  def _format(self, value):
+    self._obj._format = value
 
     
     
@@ -518,6 +532,10 @@ class ProxyContainerObject(MapObject, Serializable, Combinable):
       
       if item_el is not None:
         item_el.set(item._proxy_type, url_hash)
+
+        if item._format:
+          item_el.set('format', str(item._format))
+          
         if item._sort_order:
           item_el.set('sort_order', str(item._sort_order))
           if item._sort_order not in sorted_items:

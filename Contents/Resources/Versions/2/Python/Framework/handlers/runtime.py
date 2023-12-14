@@ -68,24 +68,6 @@ class RuntimeRequestHandler(InternalRequestHandler):
       context.opener = None
 
 
-  @BaseHandler.before_all
-  def parse_client_capabilities(self, context):
-    if Framework.constants.header.client_capabilities in context.request.headers:
-      caps = context.request.headers[Framework.constants.header.client_capabilities].split(';')
-      for cap in caps:
-        name, values = cap.split('=')
-        if name == 'protocols':
-          context.protocols = values.split(',')
-        elif name == 'audioDecoders':
-          for value in values.split(','):
-            codec, args = Framework.utils.parse_codec(value)
-            context.audio_codecs[codec] = args
-        elif name == 'videoDecoders':
-          for value in values.split(','):
-            codec, args = Framework.utils.parse_codec(value)
-            context.video_codecs[codec] = args
-      
-
   @BaseHandler.after_all
   def return_cache_time(self, context, response_headers):
     if context.cache_time != None:

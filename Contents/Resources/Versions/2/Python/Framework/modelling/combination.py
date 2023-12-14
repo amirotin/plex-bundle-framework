@@ -18,6 +18,12 @@ class BundleCombiner(object):
     self._core = core
     self._model_path = model_path
     self._config_path = config_path
+    self._linked_attributes = {
+      "rating": ["rating_image"],
+      "audience_rating": ["audience_rating_image"],
+    }
+
+    self._dependent_attributes = reduce(lambda x, y: x + y, self._linked_attributes.values(), [])
 
   def _dlog(self, msg, *args):
     if Framework.constants.flags.log_metadata_combination in self._core.flags:
@@ -50,14 +56,34 @@ class BundleCombiner(object):
         rule_action = 'merge'
       else:
         rule_action = 'override'
-    
+
+    # If this attribute is dependent on another, don't output it directly.
+    if name in self._dependent_attributes:
+      return
+
     # Combine values
     if isinstance(attr, templates.ValueTemplate):
       #TODO: Account for external values
       if rule_action == 'override':
         for source in p_sources:
           if source in candidates and candidates[source].text is not None:
-            return candidates[source]
+            # Check for zero-value numeric elements.
+            try:
+              f = float(candidates[source].text)
+              if f == 0:
+                continue
+            except:
+              pass
+
+            els = [candidates[source]]
+
+            # Add any linked attributes to the returned list
+            if name in self._linked_attributes:
+              for linked_name in self._linked_attributes[name]:
+                linked_els = candidates[source].xpath('../' + linked_name)
+                els.extend(linked_els)
+
+            return els
       else:
         raise Framework.exceptions.FrameworkException("Unable to perform the action '%s' on an object of type %s" % (rule_action, type(attr)))
       
@@ -105,6 +131,9 @@ class BundleCombiner(object):
               # Copy the item element
               item_copy = deepcopy(item_el)
               
+              # Insert source.
+              item_copy.set('provider', source)
+              
               # Check whether a stored file exists
               stored_file_path = link_path.replace('_combined', '_stored')
               if os.path.exists(stored_file_path):
@@ -133,7 +162,12 @@ class BundleCombiner(object):
           ident = filename[:filename.rfind('_')]
           info = agent_info.get(ident, [])
           for info_dict in info:
-            if cls.__name__ in info_dict.get('media_types', []):
+            clsname = cls.__name__
+            if clsname == 'LegacyArtist':
+              clsname = 'Artist'
+            if clsname == 'LegacyAlbum':
+              clsname = 'Album'
+            if clsname in info_dict.get('media_types', []):
               persist_stored_files = info_dict.get('persist_stored_files', True)
 
           if persist_stored_files and filename not in combined_names:
@@ -171,7 +205,7 @@ class BundleCombiner(object):
         self._core.storage.make_dirs(self._core.storage.dir_name(dest))
         self._core.storage.symlink(source, dest)
 
-      return attr_el
+      return [attr_el]
       
       
     # Combine directories
@@ -196,7 +230,7 @@ class BundleCombiner(object):
       for source in symlink_map:
         self._core.storage.symlink(source, symlink_map[source])
       
-      return self._core.data.xml.element(name)
+      return [self._core.data.xml.element(name)]
         
     
     # Combine maps
@@ -219,7 +253,7 @@ class BundleCombiner(object):
           attr_el.append(item_map[item_name])
         
         # Return it
-        return attr_el
+        return [attr_el]
       
       # TODO: Merge child attributes          
       
@@ -277,14 +311,14 @@ class BundleCombiner(object):
           
           # Combine the item
           if isinstance(item_template, templates.RecordTemplate):
-            item_el = self._combine_object(root_path, os.path.join(internal_path, process_key(key)), config_identifier, rule, item_candidates, list(p_sources), item_template, parts=parts[2:] if len(parts) > 0 else [], cls=cls)
+            item_els = [self._combine_object(root_path, os.path.join(internal_path, process_key(key)), config_identifier, rule, item_candidates, list(p_sources), item_template, parts=parts[2:] if len(parts) > 0 else [], cls=cls)]
           else:
-            item_el = self._combine_attr(root_path, os.path.join(internal_path, process_key(key)), attr._item_template, config_identifier, rule, item_candidates, list(p_sources), item_template, parts=parts[2:] if len(parts) > 0 else [], cls=cls)
+            item_els = self._combine_attr(root_path, os.path.join(internal_path, process_key(key)), attr._item_template, config_identifier, rule, item_candidates, list(p_sources), item_template, parts=parts[2:] if len(parts) > 0 else [], cls=cls)
         
           # If combined successfully, process the item
-          if item_el is not None:
-            path = os.path.join(internal_path, process_key(key)) if cls._template.use_hashed_map_paths else None
+          if item_els is not None:
 
+            path = os.path.join(internal_path, process_key(key)) if cls._template.use_hashed_map_paths else None
 
             # Make sure we set separate key & guid attributes if this item is GUID-based.
             def set_item_attributes(item_el):
@@ -300,35 +334,36 @@ class BundleCombiner(object):
                 if path:
                   item_el.set('path', path)
 
-            # If the map is stored internally, append the element
-            if not attr._item_template._external:
-              set_item_attributes(item_el)
-              attr_el.append(item_el)
-              
-            # If stored externally, write the element to a file and append a stub
-            else:
-              item_out_path = os.path.join(out_path, process_key(key))
-              Framework.utils.makedirs(out_path)
-              item_el.tag = class_name
-              
-              # Only serialise if we have no more parts
-              if len(parts) <= 2:
-                item_xml_str = self._core.data.xml.to_string(item_el)
-                self._core.storage.save(item_out_path + '.xml', item_xml_str)
+            for item_el in item_els:
+              # If the map is stored internally, append the element
+              if not attr._item_template._external:
+                set_item_attributes(item_el)
+                attr_el.append(item_el)
 
-              ext_el = self._core.data.xml.element('item')
-              ext_el.set('external', str(True))
-              set_item_attributes(ext_el)
+              # If stored externally, write the element to a file and append a stub
+              else:
+                item_out_path = os.path.join(out_path, process_key(key))
+                Framework.utils.makedirs(out_path)
+                item_el.tag = class_name
 
-              # Save child available date.
-              try: ext_el.set('originally_available_at', item_el.xpath('//Episode/originally_available_at')[0].text)
-              except: pass
+                # Only serialise if we have no more parts
+                if len(parts) <= 2:
+                  item_xml_str = self._core.data.xml.to_string(item_el)
+                  self._core.storage.save(item_out_path + '.xml', item_xml_str)
 
-              attr_el.append(ext_el)
+                ext_el = self._core.data.xml.element('item')
+                ext_el.set('external', str(True))
+                set_item_attributes(ext_el)
+
+                # Save child available date.
+                try: ext_el.set('originally_available_at', item_el.xpath('//Episode/originally_available_at')[0].text)
+                except: pass
+
+                attr_el.append(ext_el)
 
 
         # Return the combined map element   
-        return attr_el
+        return [attr_el]
           
         
           
@@ -354,14 +389,14 @@ class BundleCombiner(object):
         count += 1
         attr_el.append(item_el)
       
-      return attr_el
+      return [attr_el]
       #el.append(attr_el)
           
     elif isinstance(attr, templates.LinkTemplate):
       if rule_action == 'override':
         for source in p_sources:
           if source in candidates and candidates[source].text is not None:
-            return candidates[source]
+            return [candidates[source]]
       else:
         raise Framework.exceptions.FrameworkException("Unable to perform the action '%s' on an object of type %s" % (rule_action, type(attr)))
 
@@ -392,7 +427,7 @@ class BundleCombiner(object):
 
     else:
       raise Framework.exceptions.FrameworkException("Unable to combine object of type "+str(type(attr)))
-    
+
   def _apply_sources(self, p_sources, config_identifier, config_el, candidates={}):
     sources_config = config_el.xpath('sources')
     if len(sources_config) > 0:
@@ -463,13 +498,13 @@ class BundleCombiner(object):
         for source in candidates:
           source_el_list = candidates[source].xpath(name)
           if len(source_el_list) > 0:
-            attr_candidates[source] = deepcopy(source_el_list[0])
+            attr_candidates[source] = source_el_list[0]
         
         attr_template = getattr(template, name)
         setattr(attr_template, '__name__', name)
-        attr_el = self._combine_attr(root_path, os.path.join(internal_path, name), attr, config_identifier, rule, attr_candidates, list(p_sources), attr_template, parts, cls, agent_info)
-        if attr_el != None:
-          el.append(attr_el)
+        attr_els = self._combine_attr(root_path, os.path.join(internal_path, name), attr, config_identifier, rule, attr_candidates, list(p_sources), attr_template, parts, cls, agent_info)
+        if attr_els is not None:
+          el.extend(attr_els)
         
     return el
     
@@ -545,7 +580,18 @@ class BundleCombiner(object):
       # Fix the main GUID if parts were provided
       if len(parts) > 0:
         guid = '%s://%s%s' % (identifier, metadata_id, qs)
-      
+
+        # The guid for these agents can not be used for combining season or episode
+        # We provide com.plexapp.agents.thetvdb://12345/1/5 but we need com.plexapp.agents.thetvdb://12345/seasons/1/episodes/5
+        # Add the season and episode part back
+        if identifier in ['com.plexapp.agents.themoviedb', 'com.plexapp.agents.thetvdb']:
+          if len(parts) == 1:
+            # e.g com.plexapp.agents.thetvdb://12345/1
+            parts = ['seasons', parts[0]]
+          elif len(parts) == 2:
+            # e.g com.plexapp.agents.thetvdb://12345/1/5
+            parts = ['seasons', parts[0], 'episodes', parts[1]]
+
     guid_hash = self._core.data.hashing.sha1(guid)
     class_name = self.name_for_class(cls)
     bundle_path = os.path.join(self._model_path, class_name, guid_hash[0], guid_hash[1:] + '.bundle')
@@ -583,8 +629,15 @@ class BundleCombiner(object):
           # Grab the identifier and get the stored file persistence attribute from the info dict.
           ident = name[:name.rfind('_')]
           info = agent_info.get(ident, [])
+          media_type_done = []
           for info_dict in info:
-            if cls.__name__ in info_dict.get('media_types', []):
+            clsname = cls.__name__
+            if clsname == 'LegacyArtist':
+              clsname = 'Artist'
+            if clsname == 'LegacyAlbum':
+              clsname = 'Album'
+            if clsname in info_dict.get('media_types', []) and clsname not in media_type_done:
+              media_type_done.append(clsname)
               persist_stored_files = info_dict.get('persist_stored_files', True)
 
               # Compute the original file path

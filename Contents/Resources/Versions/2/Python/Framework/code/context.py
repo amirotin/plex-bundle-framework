@@ -50,9 +50,6 @@ class ExecutionContext(threading.local):
     self.response_status = None
     self.response_headers = {}
     self.http_headers = dict(self._sandbox.custom_headers)
-    self.protocols = []
-    self.audio_codecs = {}
-    self.video_codecs = {}
     self.pref_values = {}
     self.session_data = {}
     self.log = []

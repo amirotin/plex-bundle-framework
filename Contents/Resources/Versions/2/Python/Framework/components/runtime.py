@@ -629,8 +629,8 @@ class Runtime(BaseComponent):
       cpu_name = "i386"
     else:
       cpu_name = os.uname()[4]
-    if cpu_name in self._core.config.cpu_map:
-      return self._core.config.cpu_map[cpu_name]
+
+    return self._core.config.cpu_map.get(cpu_name, cpu_name)
       
   @property
   def platform(self):
@@ -868,6 +868,12 @@ class Runtime(BaseComponent):
     except Framework.exceptions.UnauthorizedException:
       self._core.log.debug("Unauthorized")
       status = 401
+      headers = {}
+      body = ''
+
+    except Framework.exceptions.BadRequestException:
+      self._core.log.debug("Bad Request")
+      status = 400
       headers = {}
       body = ''
 

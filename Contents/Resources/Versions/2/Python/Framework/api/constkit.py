@@ -22,6 +22,7 @@ class ClientPlatforms(Framework.ConstantGroup):
 
 class Protocols(Framework.ConstantGroup):
 
+  DASH                    = 'dash'
   HTTP                    = 'http'
   HLS                     = 'hls'
   RTMP                    = 'rtmp'
@@ -83,6 +84,7 @@ class SummaryTextTypes(Framework.ConstantGroup):
 class AudioCodecs(Framework.ConstantGroup):
 
   AAC                     = 'aac'
+  DCA                     = 'dca'
   MP3                     = 'mp3'
   WMA                     = 'wma'
   WMAP                    = 'wmap'
@@ -108,6 +110,7 @@ class Containers(Framework.ConstantGroup):
 
   MKV                     = 'mkv'
   MP4                     = 'mp4'
+  MPEGTS                  = 'mpegts'
   MOV                     = 'mov'
   AVI                     = 'avi'
   MP3                     = 'mp3'

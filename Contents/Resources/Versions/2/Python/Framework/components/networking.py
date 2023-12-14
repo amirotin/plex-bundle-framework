@@ -23,7 +23,6 @@ httplib = Framework.utils.ps_import('httplib')
 GLOBAL_DEFAULT_TIMEOUT = httplib._GLOBAL_DEFAULT_TIMEOUT if sys.platform != 'win32' else socket._GLOBAL_DEFAULT_TIMEOUT
   
 import cStringIO as StringIO
-from OpenSSL import SSL
 
 import cerealizer
 cerealizer.register(cookielib.Cookie)
@@ -46,11 +45,6 @@ class HeaderDictionary(dict):
     name = '-'.join(parts)
     dict.__setitem__(self, name, value)
 
-class SSLSocket(object):
-  def __init__(self):
-    self._sock = socket.socket()
-    self._con = SSL.Connection(SSL.Context(SSL.SSLv23_METHOD), self._sock)
-  
   def do_handshake(self):
     while True:
       try:
@@ -298,8 +292,6 @@ class Networking(BaseComponent):
 
     self.cache_time = 0
     self.default_timeout = self._core.config.default_network_timeout
-    
-    self.ssl_socket = SSLSocket
     
     # Build a global opener.
     self._opener = self.build_opener()

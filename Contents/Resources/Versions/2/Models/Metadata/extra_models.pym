@@ -66,6 +66,10 @@ class Short(VideoExtra):
     xml_attributes = dict(type='clip',
                           relation_type='short')
 
+class Other(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='other')
+
 class MusicVideo(VideoExtra):
     xml_attributes = dict(type='clip',
                           relation_type='musicVideo')

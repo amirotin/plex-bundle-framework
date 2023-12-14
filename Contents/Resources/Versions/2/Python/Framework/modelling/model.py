@@ -151,7 +151,11 @@ class Model(AttributeSet, Serializable):
       return os.listdir(self._model._storage_path)
     except:
       return []
-    
+
+  @property
+  def attrs(self):
+    return self._attributes
+
   def contribution(self, identifier):
     #TODO: Check for errors, throw exceptions
     name = type(self).__name__

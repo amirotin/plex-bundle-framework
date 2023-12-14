@@ -10,7 +10,8 @@ from base import BaseKit
 class ProxyTemplateKit(object):
   Preview         = Framework.modelling.templates.ProxyTemplate('Preview')
   Media           = Framework.modelling.templates.ProxyTemplate('Media')
-  
+  LocalFile       = Framework.modelling.templates.ProxyTemplate('LocalFile')
+  Remote          = Framework.modelling.templates.ProxyTemplate('Remote')
 
 class TemplateKit(BaseKit):
   """

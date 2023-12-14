@@ -334,8 +334,8 @@ class IOLoop(object):
 
     def _read_waker(self, fd, events):
         try:
-            while True:
-                self._waker_reader.read()
+            while self._waker_reader.read():
+                pass
         except IOError:
             pass
 

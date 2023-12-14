@@ -322,12 +322,3 @@ class NetworkKit(BaseKit):
       :rtype: `socket <http://docs.python.org/library/socket.html#socket-objects>`_
     """
     return self._core.networking.socket()
-    
-  @BaseKit._exclude_from(Framework.policies.CloudPolicy)
-  def SSLSocket(self):
-    """
-      Creates a new *SSLSocket* object. These objects operate almost identically to the *socket* objects
-      returned by the above method, but support SSL connections. The only additional requirement is that
-      the *do_handshake()* method is called after establishing a connection.
-    """
-    return self._core.networking.ssl_socket()

@@ -125,9 +125,11 @@ class MediaProxyContentsDirectory(MediaContentsDirectory):
       p_index = attrs.get('index')  
       p_codec = attrs.get('codec')
       p_format = attrs.get('format')
+      p_default = attrs.get('default')
+      p_forced = attrs.get('forced')
       
       # Create a tuple of the values
-      tup = (p_type, p_value, p_sort, p_index, p_codec, p_format)
+      tup = (p_type, p_value, p_sort, p_index, p_codec, p_format, p_default, p_forced)
       
       # If there isn't an item with this name in the dict already, add it
       if p_name not in self._proxies:
@@ -144,7 +146,7 @@ class MediaProxyContentsDirectory(MediaContentsDirectory):
   def _element(self, tag='Directory', item_tag='Item'):
 
     def item_el_for_tuple(tup):
-      p_type, p_value, p_sort, p_index, p_codec, p_format = tup
+      p_type, p_value, p_sort, p_index, p_codec, p_format, p_default, p_forced = tup
       
       item_el = self._core.data.xml.element(item_tag)
       item_el.set('name', item)
@@ -168,6 +170,12 @@ class MediaProxyContentsDirectory(MediaContentsDirectory):
 
       if p_format:
         item_el.set('format', p_format)
+
+      if p_default:
+        item_el.set('default', p_default)
+
+      if p_forced:
+        item_el.set('forced', p_forced)
         
       return item_el
         
@@ -199,6 +207,8 @@ class MediaProxyContentsDirectory(MediaContentsDirectory):
       p_index = value._index
       p_codec = value._codec
       p_format = value._format
+      p_default = value._default
+      p_forced = value._forced
       
       # Set the codec to the file extension if one isn't provided
       if p_codec == None:
@@ -229,7 +239,7 @@ class MediaProxyContentsDirectory(MediaContentsDirectory):
       else:
         raise ValueError("Invalid proxy type '%s'" % value._proxy_name)
       
-      return (p_type, p_value, p_sort, p_index, p_codec, p_format)
+      return (p_type, p_value, p_sort, p_index, p_codec, p_format, p_default, p_forced)
     
     if isinstance(value, Framework.modelling.attributes.ProxyObject):
       
@@ -260,7 +270,7 @@ class MediaProxyContentsDirectory(MediaContentsDirectory):
     
     # Helper function for retrieving data based on the contents of a tuple
     def item_from_tuple(tup):
-      p_type, p_value, p_sort, p_index, p_codec, p_format = tup
+      p_type, p_value, p_sort, p_index, p_codec, p_format, p_default, p_forced = tup
       
       # We're accessing a local file proxy - load and return the contents of the file
       if p_type == 'LocalFile':
@@ -300,7 +310,7 @@ class MediaProxyContentsDirectory(MediaContentsDirectory):
     
   def _del(self, item):  
     def delete_item_for_tuple(tup):
-      p_type, p_value, p_sort, p_index, p_codec, p_format = tup
+      p_type, p_value, p_sort, p_index, p_codec, p_format, p_default, p_forced = tup
       
       # If it's a media proxy, remove the file on disk
       if p_type == 'Media':

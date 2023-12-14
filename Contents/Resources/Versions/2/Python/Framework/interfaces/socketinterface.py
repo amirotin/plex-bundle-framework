@@ -171,7 +171,7 @@ class SocketInterface(PipeInterface):
     application.server = server
     
     # Attempt to listen on the given port
-    server.listen(port)
+    server.listen(port, address='127.0.0.1')
     
     # If no port was defined, check which one we're actually listening on
     if port == 0:

@@ -13,6 +13,7 @@ from socket import error as SocketError
 
 class FrameworkException(Exception): pass
 class UnauthorizedException(Exception): pass
+class BadRequestException(Exception): pass
 class AttributeException(Exception): pass
 
 class RedirectError(Exception):

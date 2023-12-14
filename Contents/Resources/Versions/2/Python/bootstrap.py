@@ -59,7 +59,7 @@ else:
   os_name = uname[0]
   cpu_name = uname[4]
 
-mapped_cpu = config.cpu_map[cpu_name]
+mapped_cpu = config.cpu_map.get(cpu_name, cpu_name)
   
 # Special case for Linux/x64 (really should be special case for OS X...)
 if os_name == 'Linux' and cpu_name == 'x86_64':
@@ -107,15 +107,6 @@ bundle_path = args[0]
 
 del parser
 del OptionParser
-
-# Whack any .pyc files found in Contents/Libraries
-libs_path = os.path.join(bundle_path, 'Contents', 'Libraries')
-if os.path.exists(libs_path):
-  for root, dirs, files in os.walk(libs_path):
-    for f in files:
-      if f[-4:] == '.pyc':
-        fp = os.path.join(root, f)
-        os.unlink(fp)
       
 # Select the interface class to use
 if options.interface == const.interface.pipe:

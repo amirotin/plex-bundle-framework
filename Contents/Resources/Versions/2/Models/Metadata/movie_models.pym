@@ -6,7 +6,7 @@
 from common_models import Person
 from common_records import Role, Chapter
 from common_templates import MediaProxyContainer
-from extra_models import Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short
+from extra_models import Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other
 
 class Movie(MetadataModel):
   xml_tag = 'Video'
@@ -32,7 +32,7 @@ class Movie(MetadataModel):
   banners                   = MediaProxyContainer()
   themes                    = MediaProxyContainer()
   chapters                  = Template.Set(Chapter())
-  extras                    = Template.ObjectContainer(Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short)
+  extras                    = Template.ObjectContainer(Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other)
   
   # Interface settings
   writers.xml_tag           = 'Writer'

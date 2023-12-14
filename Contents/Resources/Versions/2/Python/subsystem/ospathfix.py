@@ -1,5 +1,5 @@
 
-import os, shutil, sys
+import os, shutil, sys, errno, stat
 
 # relpath path import (available in Python 2.6 and above)
 try:
@@ -75,9 +75,21 @@ if sys.platform == 'win32':
     return shutil._copy(longpathify(uni(src)), longpathify(uni(dst)))
   shutil.copy = shutil_copy
 
+  # In some circumstances (during bundle updates, e.g.) files on Windows were getting marked
+  # read-only, which was causing issues like (repeated) failed updates. This fix checks for
+  # and unsets that bit before deletion.
+  #
+  def remove_read_only(func, path, exc):
+    excvalue = exc[1]
+    if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
+      os.chmod(path, stat.S_IWRITE)
+      func(path)
+    else:
+      raise
+
   # shutil.rmtree
   shutil._rmtree = shutil.rmtree
-  def shutil_rmtree(path, ignore_errors=False, onerror=None):
+  def shutil_rmtree(path, ignore_errors=False, onerror=remove_read_only):
     return shutil._rmtree(longpathify(uni(path)), ignore_errors, onerror)
   shutil.rmtree = shutil_rmtree
 

@@ -193,7 +193,7 @@ class FrameworkCore(object):
         self.config.plugin_support_dir_name = 'Plug-in Support'
 
     self.plugin_support_path = os.path.join(self.app_support_path, self.config.plugin_support_dir_name)
-    
+    self.bundled_plugins_path = os.environ['PLEXBUNDLEDPLUGINSPATH'] if 'PLEXBUNDLEDPLUGINSPATH' in os.environ else None
     
   def _setup_framework(self):
     # Read the framework plist file
@@ -281,6 +281,8 @@ class FrameworkCore(object):
       log_dir = os.path.dirname(self.config.log_file)
     elif self.config.root_path:
       log_dir = os.path.join(self.config.root_path, self.config.log_files_dir)
+    elif 'PLEX_MEDIA_SERVER_LOG_DIR' in os.environ:
+      log_dir = os.path.join(os.environ['PLEX_MEDIA_SERVER_LOG_DIR'], 'PMS Plugin Logs')
     elif sys.platform.find('linux') == 0 and 'PLEXLOCALAPPDATA' in os.environ:
       log_dir = os.path.join(os.environ['PLEXLOCALAPPDATA'], 'Plex Media Server', 'Logs', 'PMS Plugin Logs')
     elif sys.platform == 'win32':
@@ -616,7 +618,10 @@ class FrameworkCore(object):
 
   def path_for_bundle(self, name, identifier):
     # Check if a cloud path exists - if not, use the local naming format
-    bundles_path = self.storage.join_path(self.app_support_path, self.config.bundles_dir_name)
+    if self.bundled_plugins_path is not None:
+      bundles_path = self.bundled_plugins_path
+    else:
+      bundles_path = self.storage.join_path(self.app_support_path, self.config.bundles_dir_name)
     cloud_path = self.storage.join_path(bundles_path, identifier)
     if self.storage.dir_exists(cloud_path):
       return cloud_path

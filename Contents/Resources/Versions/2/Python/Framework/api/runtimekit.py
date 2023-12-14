@@ -182,17 +182,9 @@ class ClientKit(BaseKit):
 
   @property
   def Protocols(self):
-    """
-      Reports the protocols supported by the client currently accessing the plug-in.
-      
-      :returns: A list of protocols supported by the client, containing constants defined in :mod:`Protocol`.
-      :rtype: list
-    """
-    if self._context == None:
-      self._core.log.error('Client protocol information is unavailable in this context.')
-      return []
-    return self._context.protocols
-    
+    self._core.log.error('Client protocol information is no longer available in plugins.')
+    return []
+
 
 
 class PluginKit(BaseKit):
