@@ -58,15 +58,21 @@ if sys.platform == 'win32':
     __builtins__.longpathify = longpathify
   
   # open
+  # open's mode: default='r'
+  # open's buffering: default=-1
+  #     1 means line buffered, 
+  #     any other positive value means use a buffer of (approximately) that size (in bytes).
+  #     A negative buffering means to use the system default, which is usually line buffered for 
+  #     tty devices and fully buffered for other files. If omitted, the system default is used.
   if isinstance(__builtins__, dict):
     __builtins__['_open'] = __builtins__['open']
-    def builtins_open(filename, mode='r'):
-      return __builtins__['_open'](longpathify(uni(filename)), mode)
+    def builtins_open(filename, mode='r', buffering=-1):
+      return __builtins__['_open'](longpathify(uni(filename)), mode, buffering)
     __builtins__['open'] = builtins_open
   else:
     __builtins__._open = __builtins__.open
-    def builtins_open(filename, mode='r'):
-      return __builtins__._open(longpathify(uni(filename)), mode)
+    def builtins_open(filename, mode='r', buffering=-1):
+      return __builtins__._open(longpathify(uni(filename)), mode, buffering)
     __builtins__.open = builtins_open
 
   # shutil.copy

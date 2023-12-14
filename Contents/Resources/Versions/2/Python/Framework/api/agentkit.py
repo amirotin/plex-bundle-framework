@@ -479,6 +479,13 @@ class MediaPart(object):
         self.streams.append(stream)
 
 
+class Setting(object):
+  
+  def __init__(self, core, el):
+    self._core = core
+    self.id = el.get('id')
+    self.value = el.get('value')
+
       
 class MediaItem(object):
 
@@ -514,6 +521,7 @@ class MediaTree(object):
   def __init__(self, core, el, level_names=[], child_id=None, level_attribute_keys=[]):
     self._core = core
     self.items = []
+    self.settings = {}
     self.children = []
 
     # Copy attributes from the XML element to the tree object
@@ -552,6 +560,9 @@ class MediaTree(object):
       elif child.tag == 'MediaItem':
         item = MediaItem(self._core, child)
         self.items.append(item)
+      elif child.tag == 'Setting':
+        setting = Setting(self._core, child)
+        self.settings[setting.id] = setting.value
       else:
         self._core.log.error('Unknown tag: %s', child.tag)
         
