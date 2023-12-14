@@ -78,3 +78,10 @@ class LyricMusicVideo(VideoExtra):
 
     album = Template.String()
     album.xml_attr_name = 'parentTitle'
+    
+class ConcertVideo(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='concert')
+
+    album = Template.String()
+    album.xml_attr_name = 'parentTitle'

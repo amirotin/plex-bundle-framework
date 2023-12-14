@@ -5,7 +5,7 @@
 
 from common_records import MetadataRecord, Concert
 from common_templates import MediaProxyContainer
-from extra_models import MusicVideo, BehindTheScenes, Interview, LiveMusicVideo, LyricMusicVideo
+from extra_models import MusicVideo, BehindTheScenes, Interview, LiveMusicVideo, LyricMusicVideo, ConcertVideo
 
 class Track(MetadataRecord):
   name                      = Template.String()
@@ -22,7 +22,9 @@ class Track(MetadataRecord):
 
   title                     = Template.String()
   title.is_synthetic
-  
+
+  title_sort                = Template.String()
+
   rating_key                = Template.String()
   rating_key.is_synthetic
   
@@ -78,13 +80,14 @@ class Artist(MetadataModel):
   model_name = 'Artist'
 
   title                     = Template.String()    
+  title_sort                = Template.String()
   summary                   = Template.String()    
   countries                 = Template.Set(Template.String())
   posters                   = MediaProxyContainer()
   art                       = MediaProxyContainer()
   themes                    = MediaProxyContainer()
 
-  extras                    = Template.ObjectContainer(MusicVideo, LiveMusicVideo, LyricMusicVideo, Interview, BehindTheScenes)
+  extras                    = Template.ObjectContainer(MusicVideo, LiveMusicVideo, LyricMusicVideo, Interview, BehindTheScenes, ConcertVideo)
 
   similar                   = Template.Set(Template.String())
   concerts                  = Template.Set(Concert())
@@ -115,6 +118,7 @@ class Album(object):
   model_name = 'Album'
 
   title                     = Template.String()
+  title_sort                = Template.String()
   summary                   = Template.String()
   studio                    = Template.String()
   originally_available_at   = Template.Date()

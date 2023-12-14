@@ -451,7 +451,10 @@ class MediaPart(object):
       self._path = None
       self._core.log.error('We seem to be missing the hash for media item [%s]', self.file)
     
-    if self._path:
+    # See if we have a track. We don't want to do the media bundle thing for tracks.
+    is_track = hasattr(self, 'metadataType') and self.metadataType == '10'
+    
+    if self._path and is_track == False:
       self.thumbs = MediaContentsDirectory(self._core, self._core.storage.join_path(self._path, 'Contents', 'Thumbnails'))
       self.art = MediaContentsDirectory(self._core, self._core.storage.join_path(self._path, 'Contents', 'Art'))
       self.subtitles = SubtitlesDirectory(self._core, self._core.storage.join_path(self._path, 'Contents', 'Subtitle Contributions', self._core.identifier))

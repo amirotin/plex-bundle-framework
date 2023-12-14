@@ -1027,7 +1027,7 @@ class ObjectKit(BaseKit):
     self._publish(self._generate_class(access_point.MusicVideo))
     self._publish(self._generate_class(access_point.LiveMusicVideo))
     self._publish(self._generate_class(access_point.LyricMusicVideo))
-
+    self._publish(self._generate_class(access_point.ConcertVideo))
 
     # Convenience functions.
     self._publish(self._web_video_url, name='WebVideoURL')
