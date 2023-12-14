@@ -30,3 +30,9 @@ class Serializable(object):
       path += '.' + self._data_ext
     if os.path.exists(path):
       return self._core.storage.load(path)
+
+  def _deletedata(self, path):
+    if self._data_ext is not None:
+      path += '.' + self._data_ext
+    if os.path.exists(path):
+      os.unlink(path)

@@ -39,7 +39,14 @@ class ModelMetaclass(type):
     
   @property
   def _pluralized_name(cls):
-    return Framework.utils.plural(cls.__name__.replace('_', ' '))
+    return Framework.utils.plural(cls._model_name.replace('_', ' '))
+
+  @property
+  def _model_name(cls):
+    try:
+      return cls._template.model_name
+    except:
+      return cls.__name__
     
   @property
   def _core(cls):
@@ -200,7 +207,7 @@ class Model(AttributeSet, Serializable):
     
     cls = type(self)
     Framework.utils.makedirs(path)
-    el = self._core.data.xml.element(cls.__name__)
+    el = self._core.data.xml.element(cls._model_name)
     el.set('id', self._id)
 
     for name in cls._attributes:

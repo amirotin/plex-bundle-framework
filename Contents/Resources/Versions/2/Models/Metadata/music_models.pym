@@ -3,9 +3,11 @@
 #  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
 #
 
+from common_records import MetadataRecord
 from common_templates import MediaProxyContainer
+from extra_models import MusicVideo
 
-class Track(Template.Record):
+class Track(MetadataRecord):
   name                      = Template.String()
   name.exclude_from_interface
   
@@ -38,17 +40,20 @@ class Track(Template.Record):
   genres                    = Template.Set(Template.String())
   genres.xml_tag            = 'Genre'
   genres.is_synthetic
-  
+
   tags                      = Template.Set(Template.String())
   tags.xml_tag              = 'Tag'
-  tags.is_synthetic
-  
+
   duration                  = Template.Integer()            
   duration.is_synthetic
-  
+
+  tempo                     = Template.Integer()            
+
+  moods                     = Template.Set(Template.String())
+  moods.xml_tag             = 'Mood'
+
   rating                    = Template.Float()              
-  rating.is_synthetic
-  
+
   thumb                     = Template.String()
   thumb.is_synthetic
   
@@ -64,12 +69,17 @@ class Track(Template.Record):
   
   source_title              = Template.String()
   source_title.is_synthetic
+
+  extras                    = Template.ObjectContainer(MusicVideo)
   
   
 
 class Artist(MetadataModel):
+  model_name = 'Artist'
+
   title                     = Template.String()    
   summary                   = Template.String()    
+  countries                 = Template.Set(Template.String())
   posters                   = MediaProxyContainer()
   art                       = MediaProxyContainer()
   themes                    = MediaProxyContainer()
@@ -97,8 +107,9 @@ class Artist(MetadataModel):
   
   
   
-class Album(MetadataModel):
-  artist                    = Template.Link(Artist)
+class Album(object):
+  model_name = 'Album'
+
   title                     = Template.String()
   summary                   = Template.String()
   studio                    = Template.String()
@@ -107,7 +118,9 @@ class Album(MetadataModel):
   countries                 = Template.Set(Template.String())  
   posters                   = MediaProxyContainer()
   tracks                    = Template.Map(Track())
-
+  
+  genres                    = Template.Set(Template.String())
+  genres.xml_tag            = 'Genre'
 
   # Interface settings.
   
@@ -118,14 +131,13 @@ class Album(MetadataModel):
   countries.xml_tag         = 'Country'
   
   posters.exclude_from_interface
-  artist.exclude_from_interface
   tracks.exclude_from_interface
   
   artist_name               = Template.String()
   artist_name.is_synthetic
   artist_name.xml_attr_name = 'parentTitle'
   artist_name.synthetic_name = 'artist'
-  
+
   track_count               = Template.Integer()
   track_count.is_synthetic
   track_count.xml_attr_name = 'leafCount'
@@ -136,7 +148,22 @@ class Album(MetadataModel):
   art_url                   = Template.String()
   art_url.is_synthetic
   art_url.synthetic_name    = 'art'
-  
-  
 
-Artist.albums = Template.Set(Template.Link(Album))
+
+class LegacyAlbum(MetadataModel, Album):
+  artist                    = Template.Link(Artist)
+  artist.exclude_from_interface
+
+
+class ModernAlbum(MetadataRecord, Album):
+  pass
+
+  
+class LegacyArtist(Artist):
+  albums = Template.Set(Template.Link(LegacyAlbum))
+
+
+class ModernArtist(Artist):
+  albums = Template.Map(ModernAlbum())
+  albums.save_items_externally
+  use_hashed_map_paths = True

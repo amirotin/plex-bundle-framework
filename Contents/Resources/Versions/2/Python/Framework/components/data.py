@@ -15,6 +15,7 @@ from base import BaseComponent, SubComponent
 
 pickle = Framework.LazyModule('pickle')
 html_parser = HTMLParser(encoding='utf-8')
+xml_parser = etree.XMLParser(remove_blank_text=True)
 
 class Hashing(BaseComponent):
   def _generateHash(self, data, obj, digest=False):
@@ -142,7 +143,7 @@ class XML(SubComponent):
     elif method == 'html':
       return html.tostring(el, method=method, encoding=encoding)
       
-  def from_string(self, string, isHTML=False, encoding=None):
+  def from_string(self, string, isHTML=False, encoding=None, remove_blank_text=False):
     if string is None: return None
     
     if encoding == None:
@@ -158,7 +159,7 @@ class XML(SubComponent):
         self._core.log_exception('Error parsing with lxml, falling back to soupparser')
         return soupparser.fromstring(string)
     else:
-      return etree.fromstring(markup)
+      return etree.fromstring(markup, parser=(xml_parser if remove_blank_text else None))
       
   def object_from_string(self, string):
     return objectify.fromstring(string)

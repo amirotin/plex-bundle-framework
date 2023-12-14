@@ -8,3 +8,4 @@ from tv_models import *
 from movie_models import *
 from music_models import *
 from photo_models import *
+from extra_models import *

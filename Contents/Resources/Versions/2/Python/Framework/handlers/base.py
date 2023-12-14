@@ -117,9 +117,11 @@ def generate_prefix_handler(route, func):
 
       # Call the function.
       result = self.func(*args, **kwargs)
-  
-      # Check if the channel is broken.
+
+      # If the response is a non-System ObjectContainer...
       if isinstance(result, Framework.api.objectkit.ObjectContainer) and self._core.config.daemonized == False and self._core.identifier != 'com.plexapp.system':
+
+        # Check if the channel is broken.
         self._core.log.debug('Checking if %s is broken', self._core.identifier)
         broken, broken_reason = self._core.messaging.call_external_function(
           '..system',
@@ -132,6 +134,14 @@ def generate_prefix_handler(route, func):
           self._core.log.info("Channel is flagged as broken (%s)", str(broken_reason))
           result.header = "%s may be experiencing problems" % self.name
           result.message = broken_reason if broken_reason != None else "Certain features may be unavailable."
+
+        else:
+          # Check whether the client platform is unsupported.
+          platform = self._core.sandbox.context.platform
+          if platform is not None and platform in self._core.client_platform_exclusions:
+            self._core.log.info("Channel has flagged '%s' as an unsupported platform.")
+            result.header = "This app isn't supported"
+            result.message = "You can still access %s, but you may encounter unexpected problems." % self.name
       
       return result
         

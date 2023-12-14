@@ -19,7 +19,7 @@ class ServiceRequestHandler(InternalRequestHandler):
   # External request for a URL lookup
   @BaseHandler.route('/url/lookup') # Legacy route
   @BaseHandler.route('/services/url/lookup')
-  def url_lookup(self, url, limit=None):
+  def url_lookup(self, url, limit=None, **kwargs):
     self._core.log.debug("Looking up URL '%s'", url)
     
     # Get the metadata object for the given URL

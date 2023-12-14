@@ -272,44 +272,10 @@ class HTTPRequest(object):
 
 class Networking(BaseComponent):
   def _init(self):
-    self._os_versions = ['10_4_10', '10_4_11', '10_5_0', '10_5_1', '10_5_2', '10_5_3', '10_5_4', '10_5_5', '10_5_6', '10_5_7']
-    self._languages = ['en-gb', 'it-it', 'ja-jp', 'nb-no', 'en-us', 'fr-fr', 'pl-pl', 'es-es', 'de-de']
-    
-    self._safari_versions = [
-      ['528.16', '4.0', '528.16'], 
-      ['528.10+', '4.0', '528.1'],
-      ['525.27.1', '3.2.1', '525.27.1'],
-      ['528.8+', '3.2.1', '525.27.1'],
-      ['530.1+', '3.2.1', '525.27.1'],
-      ['528.5+', '3.2.1', '525.27.1'],
-      ['528.16', '3.2.1', '525.27.1'],
-      ['525.26.2', '3.2', '525.26.12'],
-      ['528.7+', '3.1.2', '525.20.1'],
-      ['525.18.1', '3.1.2', '525.20.1'],
-      ['525.18', '3.1.2', '525.20.1'],
-      ['525.7+', '3.1.2', '525.20.1'],
-      ['528.1', '3.1.2', '525.20.1'],
-      ['527+', '3.1.1', '525.20'],
-      ['525.18', '3.1.1', '525.20'],
-      ['525.13', '3.1', '525.13']
-    ]
-    
-    self._firefox_versions = [
-      ['1.9.2.8', '20100805', '3.6.8'],
-      ['1.9.2.4', '20100611', '3.6.4'],
-      ['1.9.2.3', '20100401', '3.6.3'],
-      ['1.9.2.2', '20100316', '3.6.2'],
-      ['1.9.2', '20100115', '3.6'],
-      ['1.9.1.6', '20091201', '3.5.6'],
-      ['1.9.1.3', '20090824', '3.5.3'],
-      ['1.9.1.1', '20090715', '3.5.1'],
-    ]
-    
-    self._firefox_ua_string = "Mozilla/5.0 (Macintosh; U; Intel Mac OS X %s; %s; rv:%s) Gecko/%s Firefox/%s"
-    self._safari_ua_string = "Mozilla/5.0 (Macintosh; U; Intel Mac OS X %s; %s) AppleWebKit/%s (KHTML, like Gecko) Version/%s Safari/%s"
-    
+
     self.default_headers = {
-      'Accept-Encoding': 'gzip'
+      'Accept-Encoding': 'gzip',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.74.9 (KHTML, like Gecko) Version/7.0.2 Safari/537.74.9'
     }
     
     # Set up the cookie jar if global cookies are enabled
@@ -355,22 +321,6 @@ class Networking(BaseComponent):
     opener_args.append(urllib2.ProxyHandler)
     return urllib2.build_opener(*opener_args)
 
-    
-  def randomize_user_agent(self, sandbox, browser=None):
-    os_version = self._os_versions[random.randint(0,len(self._os_versions)-1)]
-    language = self._languages[random.randint(0,len(self._languages)-1)]
-
-    if browser == None:
-      browser = ['firefox', 'safari'][random.randint(0,1)]
-    
-    if browser == 'firefox':
-      v1, v2, v3 = self._firefox_versions[random.randint(0,len(self._firefox_versions)-1)]
-      sandbox.custom_headers['User-Agent'] = self._firefox_ua_string % (os_version, language, v1, v2, v3)
-    
-    else:
-      v1, v2, v3 = self._safari_versions[random.randint(0,len(self._safari_versions)-1)]
-      sandbox.custom_headers['User-Agent'] = self._safari_ua_string % (os_version, language, v1, v2, v3)
-    
 
   def _save(self, cookie_jar=None):
     if self._global_cookies_enabled and (cookie_jar == None or cookie_jar == self._cookie_jar):

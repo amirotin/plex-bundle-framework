@@ -5,6 +5,7 @@ import sys
 
 URLError = Framework.utils.ps_import('urllib2').URLError
 HTTPError = Framework.utils.ps_import('urllib2').HTTPError
+IncompleteRead = Framework.utils.ps_import('httplib').IncompleteRead
 
 from socket import timeout as SocketTimeout
 from socket import error as SocketError

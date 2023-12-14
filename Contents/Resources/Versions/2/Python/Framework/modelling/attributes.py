@@ -245,6 +245,36 @@ class ContainerObject(AttributeObject, Serializable):
     
 
 
+class ObjectContainerObject(ContainerObject):
+  def _init(self):
+    self._container = self._core.sandbox.environment['ObjectContainer']()
+
+  def _getcontent(self):
+    return self._container
+
+  def _serialize(self, path):
+    if not self._external:
+      raise Framework.exceptions.FrameworkException("Container objects must always be saved externally.")
+
+    if len(self._container) > 0:
+      # Validate objects within the container to ensure they inherit from the correct template class.
+      for obj in self._container.objects:
+        if hasattr(obj, '_template') == False or obj._template not in self._template._classes:
+          names = [cls.__name__ for cls in self._template._classes]
+          raise Framework.exceptions.FrameworkException("Unable to serialize object of type '%s', should be in %s" % (obj._template.__name__, str(names)))
+
+      xml = self._container._to_xml()
+      content_str = self._core.data.xml.to_string(xml)
+      return self._writedata(path, content_str)
+    else:
+      self._deletedata(path)
+
+  def _deserialize(self, path, el=None):
+    # We don't currently support deserializing container XML; add if/when it's required.
+    pass
+
+
+
 class ItemObject(AttributeObject):
   def __init__(self, obj, name):
     AttributeObject.__init__(self, obj._owner, obj._template, name)
@@ -286,7 +316,8 @@ class MapObject(ContainerObject, Serializable):
     
     for name in self._items:
       item = self._items[name]
-      item_el = item._serialize(os.path.join(path, item._name))
+      item_name = self._core.data.hashing.sha1(item._name) if self._model._template.use_hashed_map_paths else item._name
+      item_el = item._serialize(os.path.join(path, item_name))
       if item_el is not None:
         el.append(item_el)
             

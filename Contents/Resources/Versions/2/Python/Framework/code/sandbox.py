@@ -93,9 +93,6 @@ class Sandbox(Framework.CoreObject):
           config_flags.append(flag)
     self.flags = config_flags
     
-    # Set a random user agent for this sandbox
-    self._core.networking.randomize_user_agent(self)
-    
     # Set up the default builtins
     standard_builtins = dict(safe_builtins)
     standard_builtins['__import__'] = self.__import__

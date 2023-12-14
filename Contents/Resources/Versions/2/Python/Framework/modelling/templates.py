@@ -16,6 +16,7 @@ class XMLGeneratingObjectTemplate(object):
 
 class ModelTemplate(XMLGeneratingObjectTemplate):
   guid_args = []
+  use_hashed_map_paths = False
 
 class AttributeTemplate(object):
   
@@ -109,6 +110,15 @@ class DatetimeTemplate(ValueTemplate):
 class DataTemplate(AttributeTemplate):
   _object_type = attributes.DataObject
   _data_ext = None
+  _always_external = True
+
+class ObjectContainerTemplate(AttributeTemplate):
+  def __init__(self, *classes):
+    super(ObjectContainerTemplate, self).__init__()
+    self._classes = classes
+
+  _object_type = attributes.ObjectContainerObject
+  _data_ext = "xml"
   _always_external = True
   
 class RecordTemplate(AttributeTemplate, XMLGeneratingObjectTemplate):

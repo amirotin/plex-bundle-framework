@@ -39,6 +39,7 @@ ICON_RESOURCE_NAME_KEY            = 'PlexPluginIconResourceName'
 ART_RESOURCE_NAME_KEY             = 'PlexPluginArtResourceName'
 TITLE_BAR_RESOURCE_NAME_KEY       = 'PlexPluginTitleBarResourceName'
 LEGACY_PREFIX_KEY                 = 'PlexPluginLegacyPrefix'
+CLIENT_PLATFORM_EXCLUSIONS_KEY    = 'PlexClientPlatformExclusions'
 
 DEFAULT_ART_RESOURCE_NAME         = 'art-default.jpg'
 DEFAULT_ICON_RESOURCE_NAME        = 'icon-default.png'
@@ -225,6 +226,16 @@ class FrameworkCore(object):
     self.flags = bundle_plist.get(FLAGS_KEY, [])
     self.policy_name = bundle_plist.get(POLICY_KEY, 'Standard')
     self.legacy_prefix = bundle_plist.get(LEGACY_PREFIX_KEY)
+
+    # Get the list of excluded client platforms from the plist. We use these later to warn users that the channel
+    # is unsupported.
+    client_platform_exclusions = bundle_plist.get(CLIENT_PLATFORM_EXCLUSIONS_KEY)
+    if isinstance(client_platform_exclusions, basestring):
+        self.client_platform_exclusions = client_platform_exclusions.split(',')
+    elif isinstance(client_platform_exclusions, list):
+        self.client_platform_exclusions = client_platform_exclusions
+    else:
+        self.client_platform_exclusions = []
 
     try:
       self.minimum_server_version = [int(x) for x in bundle_plist[MINIMUM_SERVER_VERSION_KEY].split('.')] if MINIMUM_SERVER_VERSION_KEY in bundle_plist else None

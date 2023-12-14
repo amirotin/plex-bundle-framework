@@ -4,9 +4,12 @@
 #
 
 from common_templates import MediaProxyContainer
+from common_records import Role
 
 
 class MetadataModel(Template.Model, Template.Abstract):
+  require_key_and_rating_key = True
+
   guid_args = [
     'lang'
   ]
@@ -41,3 +44,4 @@ class Person(Template.Model):
   ]
   name = Template.String()
   photos = MediaProxyContainer()
+

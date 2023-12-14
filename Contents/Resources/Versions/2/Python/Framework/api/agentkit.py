@@ -569,6 +569,7 @@ class MediaObject(object):
   
   _attrs = dict()
   _model_name = None
+  _media_type_name = None
   _parent_model_name = None
   _parent_link_name = None
   _parent_set_attr_name = None
@@ -681,7 +682,8 @@ class Media(object):
     
 
   class Album(MediaObject):
-    _model_name = 'Album'
+    _model_name = 'LegacyAlbum'
+    _media_type_name = 'Album'
     _parent_model_name = 'Artist'
     _parent_link_name = 'artist'
     _parent_set_attr_name = 'albums'
@@ -698,7 +700,11 @@ class Media(object):
     
 
   class Artist(MediaObject):
-    _model_name = 'Artist'
+    _model_name = 'LegacyArtist'
+    _versioned_model_names = {
+      2: 'ModernArtist'
+    }
+    _media_type_name = 'Artist'
     _type_id = 8
     _attrs = dict(
       artist = None,
@@ -864,8 +870,9 @@ class AgentKit(BaseKit):
       
         media_types = []
         for media_class in agent._media_types:
-          media_types.append(media_class._model_name)
-      
+          name = media_class._media_type_name if media_class._media_type_name else media_class._model_name
+          media_types.append(name)
+
         should_add = True
         for lang in agent.languages:
           if not self._core.localization.language_code_valid(lang):
@@ -883,7 +890,8 @@ class AgentKit(BaseKit):
             primary_provider = agent.primary_provider,
             fallback_agent = agent.fallback_agent,
             persist_stored_files = agent.persist_stored_files,
-            prefs = self._core.storage.file_exists(self._core.storage.join_path(self._core.bundle_path, 'Contents', 'DefaultPrefs.json'))
+            prefs = self._core.storage.file_exists(self._core.storage.join_path(self._core.bundle_path, 'Contents', 'DefaultPrefs.json')),
+            version = agent.version
           )
           agents.append(info_dict)
       
@@ -933,7 +941,7 @@ class AgentKit(BaseKit):
       self._core.log_exception("Exception finding an agent for type %s", media_type)
 
 
-  def _update(self, media_type, guid, id, lang, dbid=None, parentGUID=None, force=False):
+  def _update(self, media_type, guid, id, lang, dbid=None, parentGUID=None, force=False, version=0):
     """
       Received an update request. Find the agent that handles the given media type, get a
       metadata object with the specified model & GUID, instruct the agent to update it,
@@ -942,8 +950,9 @@ class AgentKit(BaseKit):
     try:
       cls = Media._class_named(media_type)
       for agent in AgentKit._agents:
-        if cls in agent._media_types:
-          metadata_cls = getattr(self._access_point, cls._model_name)
+        if cls in agent._media_types and agent.version == version:
+          model_name = cls._versioned_model_names[version] if version > 0 else cls._model_name
+          metadata_cls = getattr(self._access_point, model_name)
           obj = metadata_cls[guid]
 
           if id != None:
@@ -1026,13 +1035,14 @@ class BaseAgent(object):
   accepts_from = None
   fallback_agent = None
   persist_stored_files = True
+  version = 0
   
   def __init__(self):
     self._media_types = list(type(self)._class_media_types)
 
   # Functions that agents should implement
   def search(self, media, lang): pass
-  def update(self, metadata, lang): pass
+  def update(self, metadata, media, lang): pass
     
 
   @classmethod

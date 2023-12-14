@@ -75,6 +75,10 @@ platforms_supporting_real_rtmp  = {
     None: [0],
     'Plex for Windows': [1],
   },
+  'Windows Phone': {
+    None: [0],
+    'Plex for Windows Phone': [1],
+  },
   'Roku': {
     '*': [2,4],
   },

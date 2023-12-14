@@ -42,3 +42,5 @@ class TemplateKit(BaseKit):
   
   Data            = Framework.modelling.templates.DataTemplate
   Proxy           = ProxyTemplateKit
+
+  ObjectContainer = Framework.modelling.templates.ObjectContainerTemplate

@@ -3,7 +3,11 @@
 #  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
 #
 
-from common_models import Person
+#from common_models import Person
+
+
+class MetadataRecord(Template.Record):
+  require_key_and_rating_key = True
 
 
 class Role(Template.Record):
@@ -16,3 +20,9 @@ class Role(Template.Record):
   # Interface settings
   
   xml_attr_name   = 'tag'
+
+
+class Chapter(Template.Record):
+  title = Template.String()
+  start_time_offset = Template.Integer()
+  end_time_offset = Template.Integer()

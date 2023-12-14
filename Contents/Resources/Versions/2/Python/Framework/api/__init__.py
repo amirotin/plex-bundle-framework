@@ -25,6 +25,7 @@ from logkit       import LogKit
 from utilkit      import UtilKit
 from streamkit    import StreamKit
 from cloudkit     import CloudKit
+from cryptokit    import CryptoKit
 
 
 class DevKit(BaseKit):
@@ -53,4 +54,5 @@ class DevKit(BaseKit):
     UtilKit,
     StreamKit,
     CloudKit,
+    CryptoKit,
   ]

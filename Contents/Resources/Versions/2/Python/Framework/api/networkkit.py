@@ -256,12 +256,10 @@ class HTTPKit(BaseHTTPKit):
 
   def RandomizeUserAgent(self, browser=None):
     """
-      Sets the plug-in's user agent string to a random combination of browser & operating system versions.
-      
-      :arg browser: The browser to generate a user agent string for. Either ``Firefox`` or ``Safari``, or ``None`` to randomly select the browser used.
-      :type browser: str
+      Random user agents are not supported. This function should no longer be used.
     """
-    self._core.networking.randomize_user_agent(self._sandbox, browser=browser)
+    self._core.log.error("Randomized user agent strings are no longer supported.")
+
   
 
 

@@ -6,7 +6,7 @@ from base import BaseHandler, InternalRequestHandler
 class ResourceRequestHandler(InternalRequestHandler):
 
   @BaseHandler.route('/resources/contentWithFallback')
-  def contents_of_url_with_fallback(self, fallback=None, urls=None, identifier=None, hosted_type=None, hosted_group=None, hosted_identifier=None):
+  def contents_of_url_with_fallback(self, fallback=None, urls=None, identifier=None, hosted_type=None, hosted_group=None, hosted_identifier=None, **kwargs):
     # Check whether we should be using temporary redirects or not.
     # PMS <0.9.6.6 can only transcode images from permanent redirects.
     temporary = self._core.server_version_at_least(0,9,6,6)

@@ -4,11 +4,11 @@
 #
 
 from common_models import Person
-from common_records import Role
+from common_records import MetadataRecord, Role
 from common_templates import MediaProxyContainer
 
 
-class Episode(Template.Record):
+class Episode(MetadataRecord):
   title                     = Template.String()
   summary                   = Template.String()
   originally_available_at   = Template.Date()
@@ -68,7 +68,7 @@ class Episode(Template.Record):
 
   
 
-class Season(Template.Record):
+class Season(MetadataRecord):
   summary                   = Template.String()
   posters                   = MediaProxyContainer()
   banners                   = MediaProxyContainer()

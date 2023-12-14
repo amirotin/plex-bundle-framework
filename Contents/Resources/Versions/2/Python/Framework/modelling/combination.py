@@ -24,6 +24,8 @@ class BundleCombiner(object):
       self._core.log.debug("(COMBINER) >>> %s" % msg, *args)
 
   def _combine_attr(self, root_path, internal_path, attr, config_identifier, config_el, candidates, p_sources, template, parts=[], cls=None, agent_info={}):
+    if attr._synthetic:
+      return
     
     out_path = os.path.join(root_path, '_combined', internal_path)
     
@@ -44,7 +46,7 @@ class BundleCombiner(object):
     
     # If no action is defined, set a default based on the template class
     if rule_action == None:
-      if isinstance(attr, templates.MapTemplate):
+      if isinstance(attr, (templates.MapTemplate, templates.ObjectContainerTemplate)):
         rule_action = 'merge'
       else:
         rule_action = 'override'
@@ -199,6 +201,9 @@ class BundleCombiner(object):
     
     # Combine maps
     elif isinstance(attr, templates.MapTemplate):
+      def process_key(key):
+        return self._core.data.hashing.sha1(key) if cls._template.use_hashed_map_paths else key
+
       # If overriding, use the items from the first populated source
       if rule_action == 'override':
         item_map = {}
@@ -231,9 +236,9 @@ class BundleCombiner(object):
             
               # If the item is saved externally, discard the current element and load the contents of the XML file
               if bool(item_el.get('external')) == True:
-                item_xml_path = os.path.join(root_path, source, internal_path, key+'.xml')
+                item_xml_path = os.path.join(root_path, source, internal_path, process_key(key) + '.xml')
                 item_xml_str = self._core.storage.load(item_xml_path)
-                item_el = self._core.data.xml.from_string(item_xml_str)
+                item_el = self._core.data.xml.from_string(item_xml_str, remove_blank_text=True)
               
               item_candidate_sets[key][source] = deepcopy(item_el)
           
@@ -262,20 +267,26 @@ class BundleCombiner(object):
           
           # Combine the item
           if isinstance(item_template, templates.RecordTemplate):
-            item_el = self._combine_object(root_path, os.path.join(internal_path, key), config_identifier, rule, item_candidates, list(p_sources), item_template, parts=parts[2:] if len(parts) > 0 else [])
+            item_el = self._combine_object(root_path, os.path.join(internal_path, process_key(key)), config_identifier, rule, item_candidates, list(p_sources), item_template, parts=parts[2:] if len(parts) > 0 else [], cls=cls)
           else:
-            item_el = self._combine_attr(root_path, os.path.join(internal_path, key), attr._item_template, config_identifier, rule, item_candidates, list(p_sources), item_template, parts=parts[2:] if len(parts) > 0 else [])
+            item_el = self._combine_attr(root_path, os.path.join(internal_path, process_key(key)), attr._item_template, config_identifier, rule, item_candidates, list(p_sources), item_template, parts=parts[2:] if len(parts) > 0 else [], cls=cls)
         
           # If combined successfully, process the item
           if item_el is not None:
+            path = os.path.join(internal_path, process_key(key)) if cls._template.use_hashed_map_paths else None
+
             # If the map is stored internally, append the element
             if not attr._item_template._external:
               item_el.set('key', key)
+
+              if path:
+                item_el.set('path', path)
+
               attr_el.append(item_el)
               
             # If stored externally, write the element to a file and append a stub
             else:
-              item_out_path = os.path.join(out_path, key)
+              item_out_path = os.path.join(out_path, process_key(key))
               Framework.utils.makedirs(out_path)
               item_el.tag = class_name
               
@@ -287,13 +298,17 @@ class BundleCombiner(object):
               ext_el = self._core.data.xml.element('item')
               ext_el.set('external', str(True))
               ext_el.set('key', key)
+
+              if path:
+                ext_el.set('path', path)
               
               # Save child available date.
               try: ext_el.set('originally_available_at', item_el.xpath('//Episode/originally_available_at')[0].text)
               except: pass
 
               attr_el.append(ext_el)
-        
+
+
         # Return the combined map element   
         return attr_el
           
@@ -331,7 +346,32 @@ class BundleCombiner(object):
             return candidates[source]
       else:
         raise Framework.exceptions.FrameworkException("Unable to perform the action '%s' on an object of type %s" % (rule_action, type(attr)))
-      
+
+    elif isinstance(attr, templates.ObjectContainerTemplate):
+      if rule_action == 'merge':
+        final_el = self._core.data.xml.element("MediaContainer")
+        for source in p_sources:
+          if source in candidates:
+            in_path = os.path.join(root_path, source, internal_path)
+            source_xml = self._core.storage.load(in_path + '.xml')
+            source_el = self._core.data.xml.from_string(source_xml, remove_blank_text=True)
+            final_el.extend(source_el)
+
+        size = len(list(final_el))
+        final_path = out_path + '.xml'
+        if size > 0:
+          final_el.set('size', str(size))
+          final_xml = self._core.data.xml.to_string(final_el)
+          if not os.path.exists(out_path):
+            os.makedirs(out_path)
+          self._core.storage.save(final_path, final_xml)
+        elif os.path.exists(final_path):
+          os.unlink(final_path)
+
+      else:
+        raise Framework.exceptions.FrameworkException("Unable to perform the action '%s' on an object of type %s" % (rule_action, type(attr)))
+
+
     else:
       raise Framework.exceptions.FrameworkException("Unable to combine object of type "+str(type(attr)))
     
@@ -414,13 +454,13 @@ class BundleCombiner(object):
       file_path = os.path.join(root_path, a_source, internal_path, 'Info.xml')
       if os.path.exists(file_path):
         source_xml_str = self._core.storage.load(file_path)
-        source_el = self._core.data.xml.from_string(source_xml_str)
+        source_el = self._core.data.xml.from_string(source_xml_str, remove_blank_text=True)
         candidates[a_source] = source_el
         
     return self._combine_object(root_path, internal_path, config_identifier, config_el, candidates, list(p_sources), template, parts, cls, agent_info)
     
   def name_for_class(self, cls):
-    return Framework.utils.plural(cls.__name__.replace('_', ' '))
+    return Framework.utils.plural(cls._model_name.replace('_', ' '))
     
   def contributing_agents(self, cls, config_identifier, include_config_identifier=False):
     class_name = self.name_for_class(cls)
@@ -467,7 +507,7 @@ class BundleCombiner(object):
     
     bad_agents = ['com.plexapp.agents.lastfm', 'com.plexapp.agents.allmusic']
     
-    if identifier in bad_agents:
+    if identifier in bad_agents or cls._template.use_hashed_map_paths:
       # Define an empty list of parts
       parts = []
       

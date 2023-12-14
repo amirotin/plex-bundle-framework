@@ -5,6 +5,7 @@
 
 import Framework
 import urllib
+import urlparse
 from Framework.modelling.objects import generate_class, generate_model_interface_class, generate_model_interface_container_class
 from Framework.components.runtime import callback_string, indirect_callback_string
 from base import BaseKit
@@ -258,6 +259,9 @@ class MediaObject(Framework.modelling.objects.Container):
   @property
   def protocols(self):
     return self._protocols
+
+  def to_xml(self):
+    return self._to_xml()
     
   def _to_xml(self):
     if len(self.parts) > 0:
@@ -299,6 +303,9 @@ class MediaObject(Framework.modelling.objects.Container):
 
       if len(part.streams) == 0:
         self._warn("Media part has no streams - attempting to synthesize")
+
+        bitrate = int(self.bitrate) if self.bitrate is not None else None
+
         if 'VideoStreamObject' in self._sandbox.environment:
           video_stream = self._sandbox.environment['VideoStreamObject'](
             width = self.width,
@@ -307,6 +314,9 @@ class MediaObject(Framework.modelling.objects.Container):
           )
           if len(self.parts) == 1:
             video_stream.duration = self.duration
+
+          if bitrate > 256:
+            video_stream.bitrate = bitrate - 256
           part.add(video_stream)
 
         if 'AudioStreamObject' in self._sandbox.environment:
@@ -317,6 +327,8 @@ class MediaObject(Framework.modelling.objects.Container):
           )
           if len(self.parts) == 1:
             audio_stream.duration = self.duration
+          if bitrate > 256:
+            audio_stream.bitrate = 256
           part.add(audio_stream)
 
           # Add media info to the URL for indirect callbacks.
@@ -471,6 +483,7 @@ class PrefsObject(Framework.modelling.objects.Object):
 class MetadataObject(Framework.modelling.objects.ModelInterfaceObject):
   _attribute_list = [
     'url',
+    'file',
     'http_cookies',
     'user_agent',
     'http_headers',
@@ -489,11 +502,39 @@ class MetadataObject(Framework.modelling.objects.ModelInterfaceObject):
     #
     empty = ('', None)
 
-    if ((hasattr(self, 'url') and self.url not in empty) or \
-      (hasattr(self, 'key') and self.key not in empty and hasattr(self, 'rating_key') and self.rating_key not in empty)) == False and not \
-      (Framework.code.context.flags.indirect in self._context.flags or self._context.request.uri.startswith('/:/plugins/')):
-      
-      raise Framework.exceptions.AttributeException('If no URL is provided, the key and rating_key attributes must be set.')
+    # If the metadata object has a 'file' attribute, synthesize a MediaObject and PartObject for it.
+    if hasattr(self, 'file') and self.file:
+      # Only allow agents to do this.
+      assert self._core.plugin_class == 'Agent'
+
+      def check(attr):
+        if getattr(self, attr, None):
+          raise AttributeError("Conflict with 'file' attribute", attr)
+
+      check('url')
+      check('key')
+      check('rating_key')
+
+      if len(self.items):
+        raise AttributeError("The 'file' attribute cannot be provided for objects with a media & part hierarchy.")
+
+      self.add(self._sandbox.environment[MediaObject.__name__](
+        parts=[self._sandbox.environment[PartObject.__name__](file=self.file)]
+      ))
+      self.file = None
+
+      has_part_with_file = True
+
+    else:
+      has_part_with_file = len(self.items) and len(self.items[0].parts) and self.items[0].parts[0].file
+
+    if self._template.require_key_and_rating_key:
+      if ((hasattr(self, 'url') and self.url not in empty) or \
+          (hasattr(self, 'key') and self.key not in empty and hasattr(self, 'rating_key') and self.rating_key not in empty)) == False and not \
+          (Framework.code.context.flags.indirect in self._context.flags or self._context.request.uri.startswith('/:/plugins/')):
+
+        if not has_part_with_file:
+          raise Framework.exceptions.AttributeException('If no URL is provided, the key and rating_key attributes must be set.')
 
 
     # When sending an indirect response, check for an empty key attribute and try to set it.
@@ -503,7 +544,7 @@ class MetadataObject(Framework.modelling.objects.ModelInterfaceObject):
 
 
     # If no source icon is defined, use a hosted resource with the current sandbox's identifier.
-    if self.source_icon == None:
+    if self.source_icon == None and not (hasattr(self._template, 'suppress_source_icon') and self._template.suppress_source_icon):
       self.source_icon = self._core.runtime.hosted_resource_url('image', 'source', self._sandbox.identifier)
 
     
@@ -548,6 +589,11 @@ class MetadataObject(Framework.modelling.objects.ModelInterfaceObject):
           items = self._core.services.media_objects_for_url(url, allow_deferred=True, metadata_class=type(self))
           if items:
             self._append_children(el, items)
+
+    elif has_part_with_file:
+      part = self.items[0].parts[0]
+      file_url = urlparse.urljoin('file:', urllib.pathname2url(part.file))
+      el.set('ratingKey', file_url)
           
           
     # If this object supports setting HTTP headers, it's a non-media object - apply HTTP headers and POST callback info
@@ -716,6 +762,9 @@ class ObjectKit(BaseKit):
       
       # Add extra attributes for URL services
       attribute_list = ['url', 'http_cookies', 'user_agent', 'source_icon']
+
+      if self._core.plugin_class == 'Agent':
+        attribute_list.append('file')
       
       # Add the http_headers attribute if this is a non-media object
       if not media:
@@ -982,11 +1031,20 @@ class ObjectKit(BaseKit):
     self._publish(self._generate_class(access_point.Episode))
     self._publish(self._generate_class(access_point.Season, media=False))
     self._publish(self._generate_class(access_point.TV_Show, media=False))
-    self._publish(self._generate_class(access_point.Artist, media=False))
-    self._publish(self._generate_class(access_point.Album, media=False))
+    self._publish(self._generate_class(access_point.LegacyArtist, media=False), name='Artist')
+    self._publish(self._generate_class(access_point.LegacyAlbum, media=False), name='Album')
     self._publish(self._generate_class(access_point.Track))
     self._publish(self._generate_class(access_point.Photo))
     self._publish(self._generate_class(access_point.PhotoAlbum, media=False))
+
+    # Extras
+    self._publish(self._generate_class(access_point.Trailer))
+    self._publish(self._generate_class(access_point.Interview))
+    self._publish(self._generate_class(access_point.DeletedScene))
+    self._publish(self._generate_class(access_point.BehindTheScenes))
+    self._publish(self._generate_class(access_point.SceneOrSample))
+    self._publish(self._generate_class(access_point.MusicVideo))
+
 
     # Convenience functions.
     self._publish(self._web_video_url, name='WebVideoURL')
