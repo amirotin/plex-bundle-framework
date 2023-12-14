@@ -273,6 +273,11 @@ class Networking(BaseComponent):
     self.cache_time = 0
     self.default_timeout = self._core.config.default_network_timeout
     
+    # On Windows make sure we don't try to load from its default CA paths as this is broken.
+    # We provide our own CA path via the SSL_CERT_FILE environment variable.
+    if sys.platform == 'win32':
+      setattr(ssl.SSLContext, "_windows_cert_stores", ())
+
     # Build a global opener.
     self._opener = self.build_opener()
 
@@ -287,16 +292,6 @@ class Networking(BaseComponent):
 
     if self._password_mgr != None:
       opener_args.append(urllib2.HTTPBasicAuthHandler(self._password_mgr))
-
-    # Workaround to get certificate verification working on Windows systems.
-    if sys.platform == 'win32':
-      ssl_default_cert_paths = ssl.get_default_verify_paths()
-      if ssl_default_cert_paths.cafile.endswith('cacert.pem'):
-        self._core.log.debug('Loading provided CA file: %s', ssl_default_cert_paths.cafile)
-        ssl_context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=ssl_default_cert_paths.cafile)
-        opener_args.append(urllib2.HTTPSHandler(context=ssl_context))
-      else:
-        raise Framework.exceptions.FrameworkException('Unable to load unrecognized CA file: %s' % ssl_default_cert_paths.cafile)
 
     opener_args.append(RedirectHandler)
     opener_args.append(urllib2.ProxyHandler)
