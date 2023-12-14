@@ -231,6 +231,10 @@ class Storage(BaseComponent):
 
   def symlink(self, src, dst):
 
+    # If we are disabling symlinks, do nothing. The lookups are handled inside PMS
+    if len(os.environ.get('DISABLESYMLINKS', '')) > 0:
+      return
+
     # Remove old link if it exists.
     if os.path.exists(dst):
       try: os.unlink(dst)
