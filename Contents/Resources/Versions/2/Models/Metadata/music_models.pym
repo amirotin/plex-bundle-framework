@@ -3,7 +3,7 @@
 #  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
 #
 
-from common_records import MetadataRecord, Concert
+from common_records import MetadataRecord, Concert, Person
 from common_templates import MediaProxyContainer
 from extra_models import MusicVideo, BehindTheScenes, Interview, LiveMusicVideo, LyricMusicVideo, ConcertVideo
 
@@ -125,7 +125,7 @@ class Album(object):
   studio                    = Template.String()
   originally_available_at   = Template.Date()
   available_at              = Template.Date()
-  producers                 = Template.Set(Template.String())
+  producers                 = Template.Set(Person())
   countries                 = Template.Set(Template.String())  
   posters                   = MediaProxyContainer()
   art                       = MediaProxyContainer()

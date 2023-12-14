@@ -3,9 +3,9 @@
 #  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
 #
 
-from common_models import Person
-from common_records import MetadataRecord, Role
+from common_records import MetadataRecord, Person
 from common_templates import MediaProxyContainer
+from extra_models import Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other
 
 
 class Episode(MetadataRecord):
@@ -16,12 +16,13 @@ class Episode(MetadataRecord):
   duration                  = Template.Integer()
   content_rating            = Template.String()
   content_rating_age        = Template.Integer()
-  writers                   = Template.Set(Template.String())
-  directors                 = Template.Set(Template.String())
-  producers                 = Template.Set(Template.String())
-  guest_stars               = Template.Set(Template.String())
+  writers                   = Template.Set(Person())
+  directors                 = Template.Set(Person())
+  producers                 = Template.Set(Person())
+  guest_stars               = Template.Set(Person())
   thumbs                    = MediaProxyContainer()
   absolute_index            = Template.Integer()
+  extras                    = Template.ObjectContainer(Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other)
   
   # Interface settings
   writers.xml_tag           = 'Writer'
@@ -74,6 +75,7 @@ class Season(MetadataRecord):
   banners                   = MediaProxyContainer()
   art                       = MediaProxyContainer()
   episodes                  = Template.Map(Episode())
+  extras                    = Template.ObjectContainer(Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other)
   episodes.save_items_externally
   
   
@@ -130,8 +132,9 @@ class TV_Show(MetadataModel):
   art                       = MediaProxyContainer()
   themes                    = MediaProxyContainer()
   seasons                   = Template.Map(Season())
-  roles                     = Template.Set(Role())
+  roles                     = Template.Set(Person())
   countries                 = Template.Set(Template.String())
+  extras                    = Template.ObjectContainer(Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other)
   seasons.save_items_externally
   
   # Interface settings

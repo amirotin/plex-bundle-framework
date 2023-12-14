@@ -8,6 +8,7 @@ import Framework
 from crypto.cipher.base import padWithPadLen
 from crypto.cipher.cbc import CBC
 from crypto.cipher.rijndael import Rijndael
+from fcrypt import crypt as Crypt
 
 from base import BaseKit
 
@@ -15,6 +16,7 @@ class CipherKit(BaseKit):
   CBC = CBC
   Rijndael = Rijndael
   PadWithPadLen = padWithPadLen
+  Crypt = Crypt
 
 
 class CryptoKit(BaseKit):

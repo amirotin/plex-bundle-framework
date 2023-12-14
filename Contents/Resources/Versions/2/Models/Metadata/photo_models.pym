@@ -3,6 +3,8 @@
 #  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
 #
 
+from common_records import Person
+
 class Photo(MetadataModel):
   xml_tag = 'Photo'
   xml_attributes = dict(type = 'photo')
@@ -17,10 +19,10 @@ class Photo(MetadataModel):
   quotes                    = Template.String()
   content_rating            = Template.String()
   content_rating_age        = Template.Integer()
-  writers                   = Template.Set(Template.String())
-  directors                 = Template.Set(Template.String())
-  producers                 = Template.Set(Template.String())
-  roles                     = Template.Set(Role())
+  writers                   = Template.Set(Person())
+  directors                 = Template.Set(Person())
+  producers                 = Template.Set(Person())
+  roles                     = Template.Set(Person())
   countries                 = Template.Set(Template.String())
   
   # Interface settings
@@ -52,10 +54,10 @@ class PhotoAlbum(MetadataModel):
   quotes                    = Template.String()
   content_rating            = Template.String()
   content_rating_age        = Template.Integer()
-  writers                   = Template.Set(Template.String())
-  directors                 = Template.Set(Template.String())
-  producers                 = Template.Set(Template.String())
-  roles                     = Template.Set(Role())
+  writers                   = Template.Set(Person())
+  directors                 = Template.Set(Person())
+  producers                 = Template.Set(Person())
+  roles                     = Template.Set(Person())
   countries                 = Template.Set(Template.String())
   
   # Interface settings

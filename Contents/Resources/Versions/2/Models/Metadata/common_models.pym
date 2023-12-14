@@ -4,7 +4,7 @@
 #
 
 from common_templates import MediaProxyContainer
-from common_records import Role, Review
+from common_records import Person, Review
 
 
 class MetadataModel(Template.Model, Template.Abstract):
@@ -42,11 +42,3 @@ class MetadataModel(Template.Model, Template.Abstract):
   genres.xml_tag        = 'Genre'
   tags.xml_tag          = 'Tag'
   
-
-class Person(Template.Model):
-  guid_args = [
-    'lang'
-  ]
-  name = Template.String()
-  photos = MediaProxyContainer()
-

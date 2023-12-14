@@ -51,3 +51,6 @@ Resource = Framework.api.resourcekit.ResourceKit
 
 # ConstKit
 ClientPlatforms = Framework.api.constkit.ClientPlatforms
+
+# CypherKit
+Cipher = Framework.api.cryptokit.CipherKit

@@ -3,24 +3,20 @@
 #  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
 #
 
-#from common_models import Person
-
 
 class MetadataRecord(Template.Record):
   require_key_and_rating_key = True
 
 
-class Role(Template.Record):
+class Person(Template.Record):
   
-  #person          = Template.Link(Person)
   role            = Template.String()
-  actor           = Template.String()
+  name            = Template.String()
   photo           = Template.String()
 
   # Interface settings
   
   xml_attr_name   = 'tag'
-
 
 class Review(Template.Record):
   author = Template.String()
