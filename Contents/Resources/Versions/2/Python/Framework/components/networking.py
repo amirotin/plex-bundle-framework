@@ -16,6 +16,7 @@ import sys
 import base64
 import urllib2
 import httplib
+import ssl
 
 from base import BaseComponent
 
@@ -286,6 +287,16 @@ class Networking(BaseComponent):
 
     if self._password_mgr != None:
       opener_args.append(urllib2.HTTPBasicAuthHandler(self._password_mgr))
+
+    # Workaround to get certificate verification working on Windows systems.
+    if sys.platform == 'win32':
+      ssl_default_cert_paths = ssl.get_default_verify_paths()
+      if ssl_default_cert_paths.cafile.endswith('cacert.pem'):
+        self._core.log.debug('Loading provided CA file: %s', ssl_default_cert_paths.cafile)
+        ssl_context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=ssl_default_cert_paths.cafile)
+        opener_args.append(urllib2.HTTPSHandler(context=ssl_context))
+      else:
+        raise Framework.exceptions.FrameworkException('Unable to load unrecognized CA file: %s' % ssl_default_cert_paths.cafile)
 
     opener_args.append(RedirectHandler)
     opener_args.append(urllib2.ProxyHandler)
