@@ -19,8 +19,7 @@ class BundleCombiner(object):
     self._model_path = model_path
     self._config_path = config_path
     self._linked_attributes = {
-      "rating": ["rating_image"],
-      "audience_rating": ["audience_rating_image"],
+      "rating": ["rating_image", "audience_rating", "audience_rating_image"]
     }
 
     self._dependent_attributes = reduce(lambda x, y: x + y, self._linked_attributes.values(), [])
@@ -38,7 +37,6 @@ class BundleCombiner(object):
     # Apply source rules from the config
     p_sources = self._apply_sources(p_sources, config_identifier, config_el, candidates)
     name = template.__name__
-    
     # Remove any sources that don't have an attribute candidate
     for source in p_sources:
       if source not in candidates:

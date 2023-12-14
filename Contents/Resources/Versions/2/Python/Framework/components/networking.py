@@ -205,13 +205,15 @@ class HTTPRequest(object):
           time.sleep(self._sleep)
 
       except urllib2.HTTPError, e:
+        content = None
+
         # Fetch the response body before closing the socket so exception handlers can access it
-        if e.hdrs and e.hdrs.getheader('Content-Encoding') == 'gzip':
+        if hasattr(e, 'read') and e.hdrs and e.hdrs.getheader('Content-Encoding') == 'gzip':
           content = self._core.data.archiving.gzip_decompress(e.read())
-        else:
+        elif hasattr(e, 'read'):
           content = e.read()
         
-        e.__dict__['content'] = content
+        e.__dict__['content'] = content if content else ''
 
         e.close()
         self._core.log.error("Error opening URL '%s'", self._url)
