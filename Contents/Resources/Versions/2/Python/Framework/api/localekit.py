@@ -19,6 +19,7 @@ class LocaleKit(BaseKit):
     self._publish(self.LocalStringWithFormat, name='F')
     
     self.Language = self._core.localization.language
+    self.CountryCodes = self._core.localization.countrycodes
     
   @property
   def DefaultLocale(self):

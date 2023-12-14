@@ -292,7 +292,7 @@ class FrameworkCore(object):
         key = 'LOCALAPPDATA'
       log_dir = os.path.join(os.environ[key], 'Plex Media Server', 'Logs', 'PMS Plugin Logs')
     else:
-      log_dir = os.path.join(os.environ['HOME'], 'Library', 'Logs', 'PMS Plugin Logs')
+      log_dir = os.path.join(os.environ['HOME'], 'Library', 'Logs', 'Plex Media Server', 'PMS Plugin Logs')
 
     log_config = dict(identifier = self.identifier, port = self.config.socket_interface_port)
     if self.config.root_path:

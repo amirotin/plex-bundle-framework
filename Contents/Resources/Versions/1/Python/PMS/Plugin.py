@@ -229,7 +229,7 @@ def __run(_bundlePath):
     logFilesPath = os.path.join(os.environ[key], "Plex Media Server", "Logs", "PMS Plugin Logs")
   else:
     pmsPath = "%s/Library/Application Support/Plex Media Server" % os.environ["HOME"]
-    logFilesPath = "%s/Library/Logs/PMS Plugin Logs" % os.environ["HOME"]
+    logFilesPath = "%s/Library/Logs/Plex Media Server/PMS Plugin Logs" % os.environ["HOME"]
   
   supportFilesPath = "%s/Plug-in Support" % pmsPath
   frameworkSupportFilesPath = "%s/Framework Support" % pmsPath

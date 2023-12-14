@@ -44,6 +44,7 @@ Log = Framework.api.logkit.LogKit
 # LocaleKit
 Locale = Framework.api.localekit.LocaleKit
 Language = Framework.components.localization.Language
+CountryCodes = Framework.components.localization.CountryCodes
 
 # ResourceKit
 Resource = Framework.api.resourcekit.ResourceKit
