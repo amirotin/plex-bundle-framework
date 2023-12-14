@@ -58,6 +58,14 @@ class SceneOrSample(VideoExtra):
     xml_attributes = dict(type='clip',
                           relation_type='sceneOrSample')
 
+class Featurette(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='featurette')
+
+class Short(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='short')
+
 class MusicVideo(VideoExtra):
     xml_attributes = dict(type='clip',
                           relation_type='musicVideo')
