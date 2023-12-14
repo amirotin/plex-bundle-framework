@@ -32,6 +32,7 @@ class Movie(MetadataModel):
   themes                    = MediaProxyContainer()
   chapters                  = Template.Set(Chapter())
   extras                    = Template.ObjectContainer(Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other)
+  similar                   = Template.Set(Template.String())
   
   # Interface settings
   writers.xml_tag           = 'Writer'

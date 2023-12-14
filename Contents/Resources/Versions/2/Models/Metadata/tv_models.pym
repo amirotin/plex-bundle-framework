@@ -135,6 +135,8 @@ class TV_Show(MetadataModel):
   roles                     = Template.Set(Person())
   countries                 = Template.Set(Template.String())
   extras                    = Template.ObjectContainer(Trailer, DeletedScene, BehindTheScenes, Interview, SceneOrSample, Featurette, Short, Other)
+  similar                   = Template.Set(Template.String())
+  
   seasons.save_items_externally
   
   # Interface settings
