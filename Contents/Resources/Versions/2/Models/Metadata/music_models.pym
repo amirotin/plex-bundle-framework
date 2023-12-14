@@ -122,9 +122,11 @@ class Album(object):
   summary                   = Template.String()
   studio                    = Template.String()
   originally_available_at   = Template.Date()
+  available_at              = Template.Date()
   producers                 = Template.Set(Template.String())
   countries                 = Template.Set(Template.String())  
   posters                   = MediaProxyContainer()
+  art                       = MediaProxyContainer()
   tracks                    = Template.Map(Track())
   
   genres                    = Template.Set(Template.String())

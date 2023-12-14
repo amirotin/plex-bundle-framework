@@ -25,8 +25,8 @@
 	<key>PlexPluginClass</key>
 	<string>System</string>
 	<key>PlexShortBundleVersion</key>
-	<string>2.6.2</string>
+	<string>2.6.3</string>
 	<key>PlexBundleVersion</key>
-	<string>2.6.2</string>
+	<string>2.6.3</string>
 </dict>
 </plist>
