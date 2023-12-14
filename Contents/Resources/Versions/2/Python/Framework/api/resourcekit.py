@@ -89,8 +89,9 @@ class ResourceKit(BaseKit):
     
     if fallback != None:
       kwargs['fallback'] = fallback
-      if self._sandbox.identifier != self._core.identifier:
-        kwargs['identifier'] = urllib.quote(self._sandbox.identifier)
+
+    if self._sandbox.identifier != self._core.identifier:
+      kwargs['identifier'] = urllib.quote(self._sandbox.identifier)
         
     if hosted_fallback != None:
       kwargs['hosted_type'] = hosted_fallback[0]

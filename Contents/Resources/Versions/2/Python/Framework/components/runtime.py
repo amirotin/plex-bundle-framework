@@ -896,6 +896,7 @@ class Runtime(BaseComponent):
           el.append(self._core.data.xml.element('Traceback', e.traceback))
         
         body = self._core.data.xml.to_string(el)
+        headers['Content-Type'] = 'application/xml'
     
     finally:
       # If the status code was set manually, override the code that was set automatically

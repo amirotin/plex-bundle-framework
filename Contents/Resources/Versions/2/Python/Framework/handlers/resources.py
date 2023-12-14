@@ -11,6 +11,20 @@ class ResourceRequestHandler(InternalRequestHandler):
     # PMS <0.9.6.6 can only transcode images from permanent redirects.
     temporary = self._core.server_version_at_least(0,9,6,6)
 
+    sandbox = None
+
+    # If an identifier was given, find a matching service sandbox
+    if identifier:
+      all_services = self._core.services.get_all_services(identifier)
+
+      if len(all_services) > 0:
+        sandbox = all_services[0].sandbox
+
+    # Otherwise, use the core identifier & sandbox.
+    else:
+      identifier = self._core.identifier
+      sandbox = self._core.sandbox
+
     # Convert None or a comma-separated string to a list.
     if urls == None:
       urls = []
@@ -19,7 +33,7 @@ class ResourceRequestHandler(InternalRequestHandler):
     
     for url in urls:
       try:
-        request = self._core.networking.http_request(url, cacheTime=0)
+        request = self._core.networking.http_request(url, cacheTime=0, sandbox=sandbox)
 
         # Try to get headers first. If that fails, try to get content. If both fail, we'll loop
         # again, but if either succeeds we'll redirect to the final URL.
@@ -35,22 +49,22 @@ class ResourceRequestHandler(InternalRequestHandler):
 
     # Nothing returned so far? Use the fallback resource.
 
-    sandbox = None
+    path = None
 
-    # If an identifier was given, find a matching service sandbox
-    if identifier:
-      all_services = self._core.services.get_all_services(identifier)
-
-      if len(all_services) > 0:
-        sandbox = all_services[0].sandbox
-    
+    # Check for a bundled fallback first.
     if fallback:
       path = self._core.runtime.external_resource_path(fallback, sandbox)
-      if path:
-        return Framework.objects.Redirect(self._core, path, temporary)
-        
+
+    # Next, check for hosted resource info.
     elif hosted_group and hosted_type:
-      return self._core.runtime.hosted_resource_url(hosted_type, hosted_group, hosted_identifier)
+      path = self._core.runtime.hosted_resource_url(hosted_type, hosted_group, hosted_identifier)
+
+    # If neither was provided, use the source image for the current identifier.
+    else:
+      path = self._core.runtime.hosted_resource_url('image', 'source', identifier)
+
+    if path:
+        return Framework.objects.Redirect(self._core, path, temporary)
 
 
   @BaseHandler.route('/resources/{resource_name}')

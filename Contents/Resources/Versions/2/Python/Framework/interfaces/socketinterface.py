@@ -20,6 +20,8 @@ SHUTDOWN_URI = '/:/shutdownInterface'
 class PluginRequestHandler(tornado.web.RequestHandler):
   _core = None
   _write_body = True
+
+  SUPPORTED_METHODS = ("GET", "HEAD", "POST", "DELETE", "PUT", "OPTIONS")
   
   @property
   def _core(self):
@@ -49,7 +51,21 @@ class PluginRequestHandler(tornado.web.RequestHandler):
     self.request.method = 'GET'
     self._write_body = False
     self._handle_request_threaded()
-    
+
+  def options(self):
+    self._headers = {
+      #'Access-Control-Allow-Origin': '*',
+      'Access-Control-Max-Age': '86400',
+      'Access-Control-Allow-Methods': 'GET, HEAD, POST, DELETE, PUT, OPTIONS',
+    }
+
+    request_headers = self.request.headers.get('Access-Control-Request-Headers')
+    if request_headers != None:
+      self._headers['Access-Control-Allow-Headers'] = request_headers
+
+    self.set_status(200)
+    self.finish()
+
   def _handle_request(self):
     try:
       # Lock here so we can modify the application's state information safely

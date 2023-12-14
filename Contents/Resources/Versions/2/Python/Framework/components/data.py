@@ -6,7 +6,7 @@
 import Framework
 import simplejson, demjson, zipfile, hashlib, binascii
 from lxml import etree, html, objectify
-from lxml.html import soupparser
+from lxml.html import soupparser, HTMLParser
 import cStringIO as StringIO
 from BeautifulSoup import UnicodeDammit
 import gzip
@@ -14,7 +14,7 @@ import gzip
 from base import BaseComponent, SubComponent
 
 pickle = Framework.LazyModule('pickle')
-
+html_parser = HTMLParser(encoding='utf-8')
 
 class Hashing(BaseComponent):
   def _generateHash(self, data, obj, digest=False):
@@ -153,15 +153,7 @@ class XML(SubComponent):
 
     if isHTML:
       try:
-        # Slow, and correct and leaky.
-        #parser = HTMLParser(encoding='utf-8')
-        #ret = etree.fromstring(markup, parser)
-
-        # Fast, and incorrect, and no leak.
-        #ret = html.fromstring(markup)
-        
-        # Fast, and correct and leaky (unless we stuff parser in lxml).
-        return html.fromstring(markup, parser = html.html_parser_utf8)
+        return html.fromstring(markup, parser=html_parser)
       except:
         self._core.log_exception('Error parsing with lxml, falling back to soupparser')
         return soupparser.fromstring(string)
