@@ -1,0 +1,18 @@
+#
+#  Plex Extension Framework
+#  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
+#
+
+from common_models import Person
+
+
+class Role(Template.Record):
+  
+  #person          = Template.Link(Person)
+  role            = Template.String()
+  actor           = Template.String()
+  photo           = Template.String()
+
+  # Interface settings
+  
+  xml_attr_name   = 'tag'

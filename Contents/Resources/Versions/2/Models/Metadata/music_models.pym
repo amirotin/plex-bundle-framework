@@ -1,0 +1,142 @@
+#
+#  Plex Extension Framework
+#  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
+#
+
+from common_templates import MediaProxyContainer
+
+class Track(Template.Record):
+  name                      = Template.String()
+  name.exclude_from_interface
+  
+  
+  # Interface settings
+  
+  xml_tag                   = 'Track'
+  xml_attributes            =  dict(type = 'track')
+  
+  key                       = Template.String()
+  key.is_synthetic
+  
+  title                     = Template.String()
+  title.is_synthetic
+  
+  rating_key                = Template.String()
+  rating_key.is_synthetic
+  
+  index                     = Template.Integer()
+  index.is_synthetic
+  
+  artist                    = Template.String()
+  artist.is_synthetic
+  artist.xml_attr_name      = 'grandparentTitle'
+  
+  album                     = Template.String()
+  album.is_synthetic
+  album.xml_attr_name       = 'parentTitle'
+  
+  genres                    = Template.Set(Template.String())
+  genres.xml_tag            = 'Genre'
+  genres.is_synthetic
+  
+  tags                      = Template.Set(Template.String())
+  tags.xml_tag              = 'Tag'
+  tags.is_synthetic
+  
+  duration                  = Template.Integer()            
+  duration.is_synthetic
+  
+  rating                    = Template.Float()              
+  rating.is_synthetic
+  
+  thumb                     = Template.String()
+  thumb.is_synthetic
+  
+  summary                   = Template.String()
+  summary.is_synthetic
+  
+  art_url                   = Template.String()
+  art_url.is_synthetic
+  art_url.synthetic_name    = 'art'
+
+  originally_available_at   = Template.Date()
+  originally_available_at.is_synthetic
+  
+  source_title              = Template.String()
+  source_title.is_synthetic
+  
+  
+
+class Artist(MetadataModel):
+  title                     = Template.String()    
+  summary                   = Template.String()    
+  posters                   = MediaProxyContainer()
+  art                       = MediaProxyContainer()
+  themes                    = MediaProxyContainer()
+  
+  
+  # Interface settings
+  
+  xml_tag                   = 'Directory'
+  xml_attributes            =  dict(type = 'artist')
+  
+  posters.exclude_from_interface
+  art.exclude_from_interface
+  themes.exclude_from_interface
+  
+  thumb                     = Template.String()
+  thumb.is_synthetic
+  
+  art_url                   = Template.String()
+  art_url.is_synthetic
+  art_url.synthetic_name    = 'art'
+  
+  track_count               = Template.Integer()
+  track_count.is_synthetic
+  track_count.xml_attr_name = 'leafCount'
+  
+  
+  
+class Album(MetadataModel):
+  artist                    = Template.Link(Artist)
+  title                     = Template.String()
+  summary                   = Template.String()
+  studio                    = Template.String()
+  originally_available_at   = Template.Date()
+  producers                 = Template.Set(Template.String())
+  countries                 = Template.Set(Template.String())  
+  posters                   = MediaProxyContainer()
+  tracks                    = Template.Map(Track())
+
+
+  # Interface settings.
+  
+  xml_tag                   = 'Directory'
+  xml_attributes            =  dict(type = 'album')
+
+  producers.xml_tag         = 'Producer'
+  countries.xml_tag         = 'Country'
+  
+  posters.exclude_from_interface
+  artist.exclude_from_interface
+  tracks.exclude_from_interface
+  
+  artist_name               = Template.String()
+  artist_name.is_synthetic
+  artist_name.xml_attr_name = 'parentTitle'
+  artist_name.synthetic_name = 'artist'
+  
+  track_count               = Template.Integer()
+  track_count.is_synthetic
+  track_count.xml_attr_name = 'leafCount'
+  
+  thumb                     = Template.String()
+  thumb.is_synthetic
+  
+  art_url                   = Template.String()
+  art_url.is_synthetic
+  art_url.synthetic_name    = 'art'
+  
+  
+
+Artist.albums = Template.Set(Template.Link(Album))
