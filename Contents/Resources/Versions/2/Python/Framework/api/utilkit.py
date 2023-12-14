@@ -16,6 +16,7 @@ import math
 import textwrap
 import urlparse
 import cgi
+import sys
 
 import pyamf
 from pyamf.remoting.client import RemotingService
@@ -306,6 +307,16 @@ class StringKit(BaseKit):
     return Framework.utils.levenshtein_distance(first, second)
 
 
+  def LevenshteinRatio(self, first, second):
+    """
+      Computes the `Levenshtein ratio (0-1) <http://en.wikipedia.org/wiki/Levenshtein_distance>`_ between two given strings.
+    """
+    if len(first) == 0 or len(second) == 0:
+      return 0.0
+    else:
+      return 1 - (Framework.utils.levenshtein_distance(first, second) / float(max(len(first), len(second))))
+
+
   def LongestCommonSubstring(self, first, second):
     """
       Returns the longest substring contained within both strings.
@@ -332,7 +343,38 @@ class StringKit(BaseKit):
   def Dedent(self, s):
     return textwrap.dedent(s)
 
+  def Clean(self, s, form='NFKD', lang=None, strip_diacritics=False, strip_punctuation=False):
 
+    # Guess at a language-specific encoding, should we need one.
+    encoding_map = {'ko' : 'cp949'}
+
+    # Precompose.
+    try: s = unicodedata.normalize(form, s.decode('utf-8'))
+    except:
+      try: s = unicodedata.normalize(form, s.decode(sys.getdefaultencoding()))
+      except:
+        try: s = unicodedata.normalize(form, s.decode(sys.getfilesystemencoding()))
+        except:
+          try: s = unicodedata.normalize(form, s.decode('utf-16'))
+          except:
+            try: s = unicodedata.normalize(form, s.decode(encoding_map.get(lang, 'ISO-8859-1')))
+            except:
+              try: s = unicodedata.normalize(form, s)
+              except Exception, e:
+                Log(type(e).__name__ + ' exception precomposing: ' + str(e))
+
+    # Strip control characters. No good can come of these.
+    s = u''.join([c for c in s if not unicodedata.category(c).startswith('C')])
+
+    # Strip punctuation if we were asked to.
+    if strip_punctuation:
+      s = u''.join([c for c in s if not unicodedata.category(c).startswith('P')])
+
+    # Strip diacritics if we were asked to.
+    if strip_diacritics:
+      s = u''.join([c for c in s if not unicodedata.combining(c)])
+
+    return s
 
 class DatetimeKit(BaseKit):
 

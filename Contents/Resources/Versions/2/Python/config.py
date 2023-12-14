@@ -57,77 +57,6 @@ http_cache_max_items_grace      = 100
 http_cache_max_size             = 52428800
 
 flags                           = []
-platforms_supporting_real_rtmp  = {
-  'Plex Home Theater': {
-      '*': [0]
-  },
-  'iOS': {
-    '*': [2,3],
-    'PlexConnect': [0,2],
-  },
-  'MacOSX': {
-    '*': [0,9,5,3],
-  },
-  'Android': {
-    '*': [2,0,0,0],
-  },
-  'Windows': {
-    None: [0],
-    'Plex for Windows': [1],
-  },
-  'Windows Phone': {
-    None: [0],
-    'Plex for Windows Phone': [1],
-  },
-  'Roku': {
-    '*': [2,4],
-  },
-  'Unknown': {
-    '*': [0,9,8,6],
-  },
-  'Firefox': {
-    '*': [0,9,8,6],
-  },
-  'Internet Explorer': {
-    '*': [0,9,8,6],
-  },
-  'Opera': {
-    '*': [0,9,8,6],
-  },
-  'Safari': {
-    '*': [0,9,8,6],
-  },
-  'Chrome': {
-    '*': [0,9,8,6],
-  },
-  'Chromecast': {
-    '*': [0,9,8,6],
-  },
-  'OmniWeb': {
-    '*': [0,9,8,6],
-  },
-  'iCab': {
-    '*': [0,9,8,6],
-  },
-  'Konqueror': {
-    '*': [0,9,8,6],
-  },
-  'Camino': {
-    '*': [0,9,8,6],
-  },
-  'Netscape': {
-    '*': [0,9,8,6],
-  },
-  'Mozilla': {
-    '*': [0,9,8,6],
-  },
-  'Samsung': {
-    'Samsung': [0],
-  },
-  'Mystery 5': {
-      '*': [0]
-  }
-}
 
 ab_api_key = None
 
@@ -161,7 +90,8 @@ os_map = {
   "Darwin"                      : "MacOSX",
   "Linux"                       : "Linux",
   "Windows"                     : "Windows",
-  "FreeBSD"                     : "FreeBSD"
+  "FreeBSD"                     : "FreeBSD",
+  "SunOS"                       : "SunOS",
 }
 
 cpu_map = {
@@ -179,4 +109,5 @@ cpu_map = {
   "armv6l"                      : "armv5tel",
   "armv7l"                      : "armv5tel",
   "ppc"                         : "ppc",
+  "sun4v"                       : "sun4v",
 }

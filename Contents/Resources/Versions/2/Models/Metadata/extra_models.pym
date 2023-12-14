@@ -61,3 +61,20 @@ class SceneOrSample(VideoExtra):
 class MusicVideo(VideoExtra):
     xml_attributes = dict(type='clip',
                           relation_type='musicVideo')
+
+    album = Template.String()
+    album.xml_attr_name = 'parentTitle'
+
+class LiveMusicVideo(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='liveMusicVideo')
+
+    album = Template.String()
+    album.xml_attr_name = 'parentTitle'
+
+class LyricMusicVideo(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='lyricMusicVideo')
+
+    album = Template.String()
+    album.xml_attr_name = 'parentTitle'

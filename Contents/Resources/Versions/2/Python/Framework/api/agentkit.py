@@ -498,7 +498,7 @@ class MediaDict(dict):
 
 class MediaTree(object):
 
-  def __init__(self, core, el, level_names=[]):
+  def __init__(self, core, el, level_names=[], child_id=None, level_attribute_keys=[]):
     self._core = core
     self.items = []
     self.children = []
@@ -513,20 +513,27 @@ class MediaTree(object):
     level_name = None
     subitems = {}
     next_level_names = []
+    next_level_attribute_keys = []
     
     if len(level_names) > 0:
       level_name = level_names[0]
       if len(level_names) > 1:
         next_level_names = level_names[1:]
+      if len(level_attribute_keys) > 1:
+        next_level_attribute_keys = level_attribute_keys[1:]
       subitems = MediaDict()
       
     for child in el:
       if child.tag == 'MetadataItem':
+        # If we were given a child ID, ignore all non-matching children.
+        if child_id and child.get('id') != child_id:
+          continue
+
         if subitems == None:
           print "No subitems can be set for level", level_name
           continue
-        index = child.get('index')
-        subitem = MediaTree(self._core, child, next_level_names)
+        index = child.get(level_attribute_keys[0] if len(level_attribute_keys) > 0 else 'index')
+        subitem = MediaTree(self._core, child, next_level_names, level_attribute_keys=next_level_attribute_keys)
         subitems[index] = subitem
         self.children.append(subitem)
       elif child.tag == 'MediaItem':
@@ -569,15 +576,17 @@ class MediaObject(object):
   
   _attrs = dict()
   _model_name = None
+  _versioned_model_names = {}
   _media_type_name = None
   _parent_model_name = None
   _parent_link_name = None
   _parent_set_attr_name = None
   _type_id = 0
   _level_names = []
+  _level_attribute_keys = []
   
 
-  def __init__(self, access_point, **kwargs):
+  def __init__(self, access_point, version=None, **kwargs):
     self._access_point = access_point
     self.primary_agent = None
     self.primary_metadata = None
@@ -601,14 +610,14 @@ class MediaObject(object):
     # Get the media tree if we got an ID passed down.
     if self.id != None:
       try:
-        setattr(self, 'tree', Media.TreeForDatabaseID(self.id, type(self)._level_names))
+        setattr(self, 'tree', Media.TreeForDatabaseID(self.id, type(self)._level_names, level_attribute_keys=type(self)._level_attribute_keys))
       except:
         self._access_point._core.log_exception("Exception when constructing media object")
 
     # Load primary agent's metadata.
     if self.primary_agent != None and self.guid != None:
       primary_access_point = self._access_point._accessor.get_access_point(self.primary_agent, read_only=True)
-      model_cls = getattr(primary_access_point, cls._model_name)
+      model_cls = getattr(primary_access_point, cls._versioned_model_names.get(version) or cls._model_name)
       self.primary_metadata = model_cls[self.guid]
       
     # Load the parent's metadata.
@@ -639,10 +648,10 @@ class Media(object):
         return media_class
         
   @classmethod
-  def TreeForDatabaseID(cls, dbid, level_names=[], host='127.0.0.1'):
-    xml_str = cls._core.networking.http_request('http://%s:32400/library/metadata/%s/tree' % (host, str(dbid)), cacheTime=0, immediate=True)
+  def TreeForDatabaseID(cls, dbid, level_names=[], host='127.0.0.1', parent_id=None, level_attribute_keys=[]):
+    xml_str = cls._core.networking.http_request('http://%s:32400/library/metadata/%s/tree' % (host, str(parent_id or dbid)), cacheTime=0, immediate=True)
     xml_obj = cls._core.data.xml.from_string(xml_str)
-    tree = MediaTree(cls._core, xml_obj[0], level_names)
+    tree = MediaTree(cls._core, xml_obj[0], level_names, child_id=dbid if parent_id else None, level_attribute_keys=level_attribute_keys)
     if tree.title == None:
       xml_str = cls._core.networking.http_request('http://%s:32400/library/metadata/%s' % (host, str(dbid)), cacheTime=0, immediate=True)
       xml_obj = cls._core.data.xml.from_string(xml_str)
@@ -713,6 +722,7 @@ class Media(object):
       index = None
     )
     _level_names = ['albums', 'tracks']
+    _level_attribute_keys = ['guid']
     
 
   class PhotoAlbum(MediaObject):
@@ -910,7 +920,7 @@ class AgentKit(BaseKit):
       self._pushing_info_lock.release()
     
 
-  def _search(self, media_type, lang, manual, kwargs):
+  def _search(self, media_type, lang, manual, kwargs, version=0, primary=True):
     """
       Received a search request - find an agent that handles the given media type, create a
       Media object from the given arguments and forward the request to the agent instance.
@@ -918,30 +928,71 @@ class AgentKit(BaseKit):
     try:
       cls = Media._class_named(media_type)
       for agent in AgentKit._agents:
-        if cls in agent._media_types:
+        if cls in agent._media_types and agent.version == version:
           try:
             self._core.log.info("Searching for matches for "+str(kwargs))
-            
-            # Check to see if the 'manual' arg was passed
-            media = cls(self._access_point, **kwargs)
-            results = Framework.objects.MediaContainer(self._core)
-            
-            if Framework.utils.function_accepts_arg(agent.search, 'manual'):
-              agent.search(results, media, lang, manual)
+
+            if agent.version > 0:
+              hints = cls(self._access_point, version=agent.version, **kwargs)
+              tree = Media.TreeForDatabaseID(kwargs['id'], level_names=cls._level_names, parent_id=kwargs.get('parentID'), level_attribute_keys=cls._level_attribute_keys)
+              results = self._core.sandbox.environment['ObjectContainer']()
+              f_args = (results, tree, hints, lang)
+              f_kwargs = {}
+
+              # Add the manual parameter if the function expects it.
+              if Framework.utils.function_accepts_arg(agent.search, 'manual'):
+                f_kwargs['manual'] = manual
+
+              if Framework.utils.function_accepts_arg(agent.search, 'partial'):
+                f_kwargs['partial'] = 'parentID' in kwargs
+
+              if Framework.utils.function_accepts_arg(agent.search, 'primary'):
+                f_kwargs['primary'] = primary
+
+              agent.search(*f_args, **f_kwargs)
+
+              results.objects.sort(key=lambda item: -item.score)
+              return self._core.data.xml.to_string(results._to_xml())
+
             else:
-              agent.search(results, media, lang)
+              media = cls(self._access_point, **kwargs)
+              f_kwargs = {}
+
+              # Check to see if the 'manual' arg should be passed.
+              if Framework.utils.function_accepts_arg(agent.search, 'manual'):
+                f_kwargs['manual'] = manual
+
+              if Framework.utils.function_accepts_arg(agent.search, 'primary'):
+                f_kwargs['primary'] = primary
+
+              # If an agent accepts a tree, assume that it's also going to return an ObjectContainer of SearchResults.
+              if Framework.utils.function_accepts_arg(agent.search, 'tree'):
+                f_kwargs['tree'] = Media.TreeForDatabaseID(kwargs['id'], level_names=cls._level_names, parent_id=kwargs.get('parentID'), level_attribute_keys=cls._level_attribute_keys)
+
+                results = self._core.sandbox.environment['ObjectContainer']()
+                f_args = (results, media, lang)
+
+                agent.search(*f_args, **f_kwargs)
+
+                return self._core.data.xml.to_string(results._to_xml())
               
-            results.Sort('year')
-            results.Sort('score', descending=True)
-            return results
-          
+              else:
+                results = Framework.objects.MediaContainer(self._core)
+                f_args = (results, media, lang)
+
+                agent.search(*f_args, **f_kwargs)
+
+                results.Sort('year')
+                results.Sort('score', descending=True)
+                return results
+
           except:
             self._core.log_exception("Exception in the search function of agent named '%s', called with keyword arguments %s", agent.name, str(kwargs))
     except:
       self._core.log_exception("Exception finding an agent for type %s", media_type)
 
 
-  def _update(self, media_type, guid, id, lang, dbid=None, parentGUID=None, force=False, version=0):
+  def _update(self, media_type, guid, id, lang, dbid=None, parentGUID=None, force=False, version=0, parentID=None, periodic=False):
     """
       Received an update request. Find the agent that handles the given media type, get a
       metadata object with the specified model & GUID, instruct the agent to update it,
@@ -951,6 +1002,16 @@ class AgentKit(BaseKit):
       cls = Media._class_named(media_type)
       for agent in AgentKit._agents:
         if cls in agent._media_types and agent.version == version:
+          if version > 0 and parentGUID is not None:
+            assert parentID is not None
+            child_guid = guid
+            child_id = id
+            guid = parentGUID
+            id = parentID
+          else:
+            child_guid = None
+            child_id = None
+
           model_name = cls._versioned_model_names[version] if version > 0 else cls._model_name
           metadata_cls = getattr(self._access_point, model_name)
           obj = metadata_cls[guid]
@@ -967,7 +1028,10 @@ class AgentKit(BaseKit):
           media = None
           try:
             if dbid:
-              media = Media.TreeForDatabaseID(dbid, level_names=cls._level_names)
+              media = Media.TreeForDatabaseID(dbid,
+                                              level_names=cls._level_names,
+                                              parent_id=parentID if version > 0 else None,
+                                              level_attribute_keys=cls._level_attribute_keys)
             else:
               media = FakeMediaObject()
               self._core.log.error("No database ID provided - faking the media object")
@@ -975,10 +1039,17 @@ class AgentKit(BaseKit):
             self._core.log_exception("Exception when constructing media object for dbid %s", dbid)
               
           try:
+            kwargs = {}
             if Framework.utils.function_accepts_arg(agent.update, 'force'):
-              agent.update(obj, media, lang, force)
-            else:
-              agent.update(obj, media, lang)
+              kwargs['force'] = force
+            if Framework.utils.function_accepts_arg(agent.update, 'child_guid'):
+              kwargs['child_guid'] = child_guid
+            if Framework.utils.function_accepts_arg(agent.update, 'child_id'):
+              kwargs['child_id'] = child_id
+            if Framework.utils.function_accepts_arg(agent.update, 'periodic'):
+              kwargs['periodic'] = periodic
+
+            agent.update(obj, media, lang, **kwargs)
           except:
             self._core.log_exception("Exception in the update function of agent named '%s', called with guid '%s'", agent.name, guid)
           obj._write()

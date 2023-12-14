@@ -3,9 +3,9 @@
 #  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
 #
 
-from common_records import MetadataRecord
+from common_records import MetadataRecord, Concert
 from common_templates import MediaProxyContainer
-from extra_models import MusicVideo
+from extra_models import MusicVideo, BehindTheScenes, Interview, LiveMusicVideo, LyricMusicVideo
 
 class Track(MetadataRecord):
   name                      = Template.String()
@@ -19,7 +19,7 @@ class Track(MetadataRecord):
   
   key                       = Template.String()
   key.is_synthetic
-  
+
   title                     = Template.String()
   title.is_synthetic
   
@@ -27,8 +27,7 @@ class Track(MetadataRecord):
   rating_key.is_synthetic
   
   index                     = Template.Integer()
-  index.is_synthetic
-  
+
   artist                    = Template.String()
   artist.is_synthetic
   artist.xml_attr_name      = 'grandparentTitle'
@@ -52,7 +51,8 @@ class Track(MetadataRecord):
   moods                     = Template.Set(Template.String())
   moods.xml_tag             = 'Mood'
 
-  rating                    = Template.Float()              
+  rating                    = Template.Float()
+  rating_count              = Template.Integer()              
 
   thumb                     = Template.String()
   thumb.is_synthetic
@@ -70,7 +70,7 @@ class Track(MetadataRecord):
   source_title              = Template.String()
   source_title.is_synthetic
 
-  extras                    = Template.ObjectContainer(MusicVideo)
+  extras                    = Template.ObjectContainer(MusicVideo, LyricMusicVideo)
   
   
 
@@ -83,8 +83,12 @@ class Artist(MetadataModel):
   posters                   = MediaProxyContainer()
   art                       = MediaProxyContainer()
   themes                    = MediaProxyContainer()
-  
-  
+
+  extras                    = Template.ObjectContainer(MusicVideo, LiveMusicVideo, LyricMusicVideo, Interview, BehindTheScenes)
+
+  similar                   = Template.Set(Template.String())
+  concerts                  = Template.Set(Concert())
+
   # Interface settings
   
   xml_tag                   = 'Directory'
@@ -153,7 +157,7 @@ class Album(object):
 class LegacyAlbum(MetadataModel, Album):
   artist                    = Template.Link(Artist)
   artist.exclude_from_interface
-
+  use_hashed_map_paths = True
 
 class ModernAlbum(MetadataRecord, Album):
   pass

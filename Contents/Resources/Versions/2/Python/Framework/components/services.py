@@ -462,8 +462,9 @@ class Services(BaseComponent):
       self._setup_shared_code_sandbox()
 
       # Kill mtimes for all services to force a reload.
-      for service in self.url_services + self.search_services + self.related_content_services:
-        service._mtime = 0
+      for service_identifier, service in (self.url_services.items() + self.search_services.items() + self.related_content_services.items()):
+        for service_name, service_record in service.items():
+          service_record._mtime = 0
 
   def _generate_shared_service_callback_path(self, function, ext=None, post_url=None, post_headers={}, *args, **kwargs):
     """ Generate a callback path for a function inside a service """

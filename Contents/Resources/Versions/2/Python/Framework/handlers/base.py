@@ -107,14 +107,6 @@ def generate_prefix_handler(route, func):
           message = self._core.localization.localize("This channel requires Plex Media Server version %s or greater.") % version_string,
         )
 
-      # Check for the Real RTMP requirement.
-      if Framework.constants.flags.use_real_rtmp in self._core.sandbox.flags and self._core.sandbox.context.supports_real_rtmp == False:
-        self._core.log.error("Real RTMP is required but not supported in the current context.")
-        return self._core.sandbox.environment['ObjectContainer'](
-          header = self._core.localization.localize("This app isn't supported"),
-          message = self._core.localization.localize("%s requires features that aren't available in the app you're using.") % self.name,
-        )
-
       # Call the function.
       result = self.func(*args, **kwargs)
 

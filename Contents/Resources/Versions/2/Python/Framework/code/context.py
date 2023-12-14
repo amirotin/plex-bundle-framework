@@ -183,43 +183,6 @@ class ExecutionContext(threading.local):
   def cache_time(self):
     return self._cache_time
     
-    
-  @property
-  def supports_real_rtmp(self):
-    # On PMS 0.9.6 or greater, we support RTMP transcoding - return the real URL if the plug-in and client support it
-    platform_supports_real_rtmp = False
-    sandbox_supports_real_rtmp = Framework.constants.flags.use_real_rtmp in self._sandbox.flags
-    
-    self._core.log.debug("Checking for Real RTMP support...  Enabled:%s  Platform:%s  Product:%s  Client:%s  Server:%s",
-      str(sandbox_supports_real_rtmp),
-      str(self.platform),
-      str(self.product),
-      str(self.client_version),
-      str(self._core.get_server_attribute('serverVersion')),
-    )
-    
-    # Check for the testing wildcard
-    if '*' in self._core.config.platforms_supporting_real_rtmp or self.platform == None:
-      platform_supports_real_rtmp = True
-    
-    # Check for the client platform
-    elif self.platform in self._core.config.platforms_supporting_real_rtmp:
-      
-      # Get the platform info and check for the product
-      platform_info = self._core.config.platforms_supporting_real_rtmp[self.platform]
-      product = self.product if self.product in platform_info else '*'
-
-      if product in platform_info:
-    
-        # Check the version number
-        min_version = platform_info[product]
-        platform_supports_real_rtmp = Framework.utils.version_at_least(self.client_version, *min_version)
-        
-        
-    return platform_supports_real_rtmp and sandbox_supports_real_rtmp and self._core.server_version_at_least(0,9,6)
-    
-
-
 
   @cache_time.setter
   def cache_time(self, value):

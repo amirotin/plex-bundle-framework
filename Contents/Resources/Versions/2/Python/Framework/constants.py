@@ -45,7 +45,6 @@ class arguments(Framework.ConstantGroup):
 
 class flags(Framework.ConstantGroup):
 
-  use_real_rtmp = 'UseRealRTMP'
   use_xpython = 'UseExtendedPython'
   use_myplex_dev_server = 'UserMyPlexDevServer'
 

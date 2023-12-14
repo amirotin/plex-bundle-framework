@@ -211,6 +211,8 @@ class PreferenceSet(object):
   def update_user_values(self, **kwargs):
     with self._user_values_lock:
       for name, value in kwargs.items():
+        if isinstance(self._prefs.get(name), BooleanPref):
+          value = 'true' if str(value).lower() in ['1', 'true'] else 'false'
         self._user_values_dict[name] = value
 
       self._save_user_file()

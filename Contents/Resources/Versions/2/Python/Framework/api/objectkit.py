@@ -108,6 +108,14 @@ class ProviderObject(Framework.modelling.objects.Object):
   _attribute_list = ['key', 'title', 'type', 'machine_identifier', 'source_icon']
 
 
+class MetadataItem(Framework.modelling.objects.Container):
+  xml_tag = 'MetadataItem'
+  _attribute_list = ['type', 'id', 'title', 'guid', 'index', 'originally_available_at', 'score', 'thumb', 'matched']
+
+class SearchResult(Framework.modelling.objects.Container):
+  xml_tag = 'SearchResult'
+  _attribute_list = ['type', 'id', 'name', 'guid', 'index', 'year', 'score', 'thumb', 'matched', 'parentName', 'parentID', 'parentGUID', 'parentIndex']
+
 class AudioStreamObject(Framework.modelling.objects.Object):
   xml_tag = 'Stream'
   _attribute_list = [
@@ -746,10 +754,10 @@ class ObjectKit(BaseKit):
     self._publish(cls, name=name, **kwargs)
 
 
-  def _generate_class(self, base, media=True, name=None, **kwargs):
+  def _generate_class(self, base, media=True, name=None, enable_attribute_synthesis=True, child_types=None, **kwargs):
     # Generate classes for non-model types.
     if Framework.modelling.model.Model not in base.__mro__:
-      cls = generate_class(base, self._sandbox)
+      cls = generate_class(base, self._sandbox, child_types=child_types)
 
     # Generate interface classes for model types.
     else:
@@ -757,8 +765,12 @@ class ObjectKit(BaseKit):
       # Synthesize a class name if one wasn't provided.
       if name == None: name = filter(lambda c: c != '_', base.__name__) + 'Object'
 
+      if child_types is None:
+        child_types = []
+        
       # If this is a media-containing object, allow MediaObject child items
-      child_types = [MediaObject] if media else []
+      if media:
+        child_types.append(MediaObject)
       
       # Add extra attributes for URL services
       attribute_list = ['url', 'http_cookies', 'user_agent', 'source_icon']
@@ -779,7 +791,7 @@ class ObjectKit(BaseKit):
 
     # Synthesize hosted attributes.
     try:
-      if self._sandbox.identifier != 'com.plexapp.system' and self._core.runtime.hash_for_hosted_resource('image', 'source'):
+      if enable_attribute_synthesis and self._sandbox.identifier != 'com.plexapp.system' and self._core.runtime.hash_for_hosted_resource('image', 'source'):
         cls.thumb = self._core.runtime.hosted_resource_url('image', 'source')
     except:
       pass
@@ -870,100 +882,65 @@ class ObjectKit(BaseKit):
 
 
   def _rtmp_video_url(self, url, clip=None, clips=None, width=None, height=None, live=False, swf_url=None, app=None, args=None, **kwargs):
-    if self._context.supports_real_rtmp:
-      self._core.log.debug("Using Real RTMP")
-      #"rtmp://stream.snagfilms.com/films/ playpath=mp4:aol/us/aoltruestories/2010/insideislam/insideislam_4000_16x9_1000"
-      
-      # Throw exceptions if unsupported arguments are used.
-      if clips:
-        raise Framework.exceptions.FrameworkException("The 'clips' argument is not currently supported when using real RTMP playback.")
-      if width:
-        self._core.log.debug("The 'width' argument has no effect when using real RTMP playback.")
-      if height:
-        self._core.log.debug("The 'height' argument has no effect when using real RTMP playback.")
-      
-      ret = url
-      if clip:
-        ret += " playpath=%s" % clip
+    # Throw exceptions if unsupported arguments are used.
+    if clips:
+      raise Framework.exceptions.FrameworkException("The 'clips' argument is not supported.")
+    if width:
+      self._core.log.debug("The 'width' argument has no effect.")
+    if height:
+      self._core.log.debug("The 'height' argument has no effect.")
 
-      if swf_url:
-        ret += " swfUrl=%s swfVfy=1" % swf_url
+    ret = url
+    if clip:
+      ret += " playpath=%s" % clip
 
-      if live:
-        ret += " live=1"
+    if swf_url:
+      ret += " swfUrl=%s swfVfy=1" % swf_url
 
-      if app:
-        ret += " app=%s" % app
+    if live:
+      ret += " live=1"
 
-      if args:
-        def make_arg(value, name=''):
-          string_value, string_type = (None, None)
-          if isinstance(value, bool):
-            string_value, string_type = ('1' if value else '0', 'B')
-          elif isinstance(value, (int, float)):
-            string_value, string_type = (str(value), 'N')
-          elif isinstance(value, basestring):
-            string_value, string_type = (str(value), 'S')
-          elif value == None:
-            string_value, string_type = ('(null)', 'Z')
+    if app:
+      ret += " app=%s" % app
 
-          if string_value and string_type:
-            if name:
-              name += ':'
-              string_type = 'N' + string_type
+    if args:
+      def make_arg(value, name=''):
+        string_value, string_type = (None, None)
+        if isinstance(value, bool):
+          string_value, string_type = ('1' if value else '0', 'B')
+        elif isinstance(value, (int, float)):
+          string_value, string_type = (str(value), 'N')
+        elif isinstance(value, basestring):
+          string_value, string_type = (str(value), 'S')
+        elif value == None:
+          string_value, string_type = ('(null)', 'Z')
 
-            return 'conn=%s:%s%s' % (string_type, name, string_value)
+        if string_value and string_type:
+          if name:
+            name += ':'
+            string_type = 'N' + string_type
 
-          if isinstance(value, dict):
-            return 'conn=O:1 ' + ' '.join([make_arg(v,k) for k,v in value.items()]) + ' conn=O:0'
-            
-          return ''
+          return 'conn=%s:%s%s' % (string_type, name, string_value)
 
-        ret += ' ' + ' '.join([make_arg(arg) for arg in args])
+        if isinstance(value, dict):
+          return 'conn=O:1 ' + ' '.join([make_arg(v,k) for k,v in value.items()]) + ' conn=O:0'
 
-      if kwargs and len(kwargs) > 0:
-        for key, value in kwargs.items():
-          ret += ' %s=%s' % (key, value)
+        return ''
 
-      if isinstance(url, callback_string):
-        rtmp_url = IndirectRTMPURL(ret) if isinstance(url, indirect_callback_string) else CallbackRTMPURL(ret)
-        rtmp_url.post_url = url.post_url
-        rtmp_url.post_headers = url.post_headers
-        return rtmp_url
-        
-      else:
-        return RTMPURL(ret)
+      ret += ' ' + ' '.join([make_arg(arg) for arg in args])
 
-    # On older versions, fall back to the flash web player
+    if kwargs and len(kwargs) > 0:
+      for key, value in kwargs.items():
+        ret += ' %s=%s' % (key, value)
+
+    if isinstance(url, callback_string):
+      rtmp_url = IndirectRTMPURL(ret) if isinstance(url, indirect_callback_string) else CallbackRTMPURL(ret)
+      rtmp_url.post_url = url.post_url
+      rtmp_url.post_headers = url.post_headers
+      return rtmp_url
+
     else:
-      self._core.log.debug("Using WebKit RTMP")
-      
-      def unsupported(arg, name):
-        if arg:
-          raise Framework.exceptions.NonCriticalArgumentException("The '%s' argument is only supported when real RTMP playback is enabled." % name)
-
-      unsupported(swf_url, 'swf_url')
-      unsupported(app, 'app')
-      unsupported(args, 'args')
-        
-      final_url = "http://www.plexapp.com/player/player.php" + \
-        "?url=" + urllib.quote(url) + \
-        "&live="
-      if live:
-        final_url += "true"
-      else:
-        final_url += "false"
-      if clip:
-        final_url += "&clip=" + urllib.quote(clip)
-      if clips:
-        for c in clips:
-          final_url += "&clip[]=" + str(c)
-      if width:
-        final_url += "&width=" + str(width)
-      if height:
-        final_url += "&height=" + str(height)
-        
-      return self._web_video_url(final_url)
+      return RTMPURL(ret)
 
 
   def _indirect_response_generator(self, container_cls, item_cls, part_cls):
@@ -1004,7 +981,9 @@ class ObjectKit(BaseKit):
         NextPageObject,
         InputDirectoryObject,
         PopupDirectoryObject,
-        PrefsObject
+        PrefsObject,
+        MetadataItem,
+        SearchResult,
       ])
 
     media_class = self._generate_class(MediaObject)
@@ -1025,14 +1004,16 @@ class ObjectKit(BaseKit):
     self._publish(self._generate_class(PopupDirectoryObject), excluded_policies=[Framework.policies.ModernPolicy])
     self._publish(self._generate_class(PrefsObject), excluded_policies=[Framework.policies.ModernPolicy])
     self._publish(self._generate_class(SearchDirectoryObject))
-      
+    self._publish(self._generate_class(MetadataItem, enable_attribute_synthesis=False, child_types=[MetadataItem]))
+    self._publish(self._generate_class(SearchResult, enable_attribute_synthesis=False, child_types=[SearchResult]))
+
     self._publish(self._generate_class(access_point.Movie))
     self._publish(self._generate_class(access_point.VideoClip))
     self._publish(self._generate_class(access_point.Episode))
     self._publish(self._generate_class(access_point.Season, media=False))
     self._publish(self._generate_class(access_point.TV_Show, media=False))
-    self._publish(self._generate_class(access_point.LegacyArtist, media=False), name='Artist')
-    self._publish(self._generate_class(access_point.LegacyAlbum, media=False), name='Album')
+    self._publish(self._generate_class(access_point.LegacyArtist, media=False, name='ArtistObject'))
+    self._publish(self._generate_class(access_point.LegacyAlbum, media=False, name='AlbumObject'))
     self._publish(self._generate_class(access_point.Track))
     self._publish(self._generate_class(access_point.Photo))
     self._publish(self._generate_class(access_point.PhotoAlbum, media=False))
@@ -1044,6 +1025,8 @@ class ObjectKit(BaseKit):
     self._publish(self._generate_class(access_point.BehindTheScenes))
     self._publish(self._generate_class(access_point.SceneOrSample))
     self._publish(self._generate_class(access_point.MusicVideo))
+    self._publish(self._generate_class(access_point.LiveMusicVideo))
+    self._publish(self._generate_class(access_point.LyricMusicVideo))
 
 
     # Convenience functions.

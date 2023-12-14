@@ -22,7 +22,23 @@ class Role(Template.Record):
   xml_attr_name   = 'tag'
 
 
+class Review(Template.Record):
+  author = Template.String()
+  source = Template.String()
+  image = Template.String()
+  link = Template.String()
+  text = Template.String()
+
+
 class Chapter(Template.Record):
   title = Template.String()
   start_time_offset = Template.Integer()
   end_time_offset = Template.Integer()
+
+class Concert(Template.Record):
+  title = Template.String()
+  venue = Template.String()
+  city = Template.String()
+  country = Template.String()
+  date = Template.String()
+  url = Template.String()

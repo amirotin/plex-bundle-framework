@@ -4,9 +4,11 @@
 #
 
 import Framework
+import errno
 import os
-import sys
 import shutil
+import stat
+import sys
 import tempfile
 
 if sys.platform == 'win32':
@@ -21,7 +23,7 @@ class Storage(BaseComponent):
     self.data_path = os.path.join(self._core.plugin_support_path, 'Data', self._core.identifier)
     self.walk = os.walk
     self.copy = shutil.copy
-    self.rename = os.rename
+    self.rename = shutil.move
     self.remove = os.remove
     self.utime = os.utime
     self.dir_name = os.path.dirname
@@ -81,7 +83,7 @@ class Storage(BaseComponent):
       f.close()
       if os.path.exists(filename):
         os.remove(filename)
-      os.rename(tempfile, filename)
+      shutil.move(tempfile, filename)
       self._update_mtime(filename, mtime_key)
     except:
       self._core.log_exception("Exception writing to %s", filename)
@@ -134,7 +136,19 @@ class Storage(BaseComponent):
 
   def remove_tree(self, path):
     if self.dir_exists(path):
-      shutil.rmtree(path)
+      shutil.rmtree(path, ignore_errors=False, onerror=self.remove_read_only)
+
+  # In some circumstances (during bundle updates, e.g.) files on Windows were getting marked
+  # read-only, which was causing issues like (repeated) failed updates. This fix checks for
+  # and unsets that bit before deletion.
+  #
+  def remove_read_only(self, func, path, exc):
+    excvalue = exc[1]
+    if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
+      os.chmod(path, stat.S_IWRITE)
+      func(path)
+    else:
+      raise
       
   def copy_tree(self, src, target, symlinks=False):
     if self.dir_exists(src):

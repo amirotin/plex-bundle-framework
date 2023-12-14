@@ -297,8 +297,19 @@ class MapItem(ItemObject, Serializable):
     if not isinstance(self._obj, Serializable):
       raise Framework.exceptions.FrameworkException("Mapping item %s is not serializable!" % repr(self._obj))
     attr_el = self._obj._serialize(path)
+
     if attr_el is not None:
       attr_el.set(type(self)._attr_name, self._name)
+
+      # If the item has its own index, use that as the key & set our name as the "guid" attribute.
+      index_els = attr_el.xpath('index')
+      if len(index_els):
+          index_el = index_els[0]
+          if index_el.text is not None:
+              attr_el.set('guid', self._name)
+              attr_el.set(type(self)._attr_name, index_el.text)
+              attr_el.remove(index_el)
+
     return attr_el
 
 
@@ -318,6 +329,7 @@ class MapObject(ContainerObject, Serializable):
       item = self._items[name]
       item_name = self._core.data.hashing.sha1(item._name) if self._model._template.use_hashed_map_paths else item._name
       item_el = item._serialize(os.path.join(path, item_name))
+
       if item_el is not None:
         el.append(item_el)
             
@@ -331,10 +343,23 @@ class MapObject(ContainerObject, Serializable):
       el = self._core.data.xml.from_string(self._readdata(path))
     for item_el in el.getchildren():
       name = item_el.get(type(self)._item_class._attr_name)
+
+      # Check if we have a GUID - if so, reassign it as the name & set the original name as the index property
+      # after deserializing the object.
+      #
+      guid = item_el.get('guid')
+      if guid is not None:
+          index = name
+          name = guid
+
       obj = self._template._item_template._new(self, 'item')
       obj._deserialize(os.path.join(path, name), item_el)
+
       self._items[name] = type(self)._item_class(obj, name)
-    
+
+      if guid is not None:
+        self._items[name].index = index
+
   def __getitem__(self, name):
     name = unicode(name)
     if name in self._items:

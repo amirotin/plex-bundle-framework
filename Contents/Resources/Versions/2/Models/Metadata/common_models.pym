@@ -4,7 +4,7 @@
 #
 
 from common_templates import MediaProxyContainer
-from common_records import Role
+from common_records import Role, Review
 
 
 class MetadataModel(Template.Model, Template.Abstract):
@@ -13,29 +13,34 @@ class MetadataModel(Template.Model, Template.Abstract):
   guid_args = [
     'lang'
   ]
-  genres              = Template.Set(Template.String())
-  tags                = Template.Set(Template.String())
-  collections         = Template.Set(Template.String())
-  duration            = Template.Integer()
-  rating              = Template.Float()
-  original_title      = Template.String()
-  title_sort          = Template.String()
+  genres                = Template.Set(Template.String())
+  tags                  = Template.Set(Template.String())
+  collections           = Template.Set(Template.String())
+  reviews               = Template.Set(Review())
+  duration              = Template.Integer()
+  rating                = Template.Float()
+  audience_rating       = Template.Float()
+  rating_image          = Template.String()
+  audience_rating_image = Template.String()
+  original_title        = Template.String()
+  title_sort            = Template.String()
+  rating_count          = Template.Integer()
   
   # Interface settings
   
-  key                 = Template.String()
+  key                   = Template.String()
   key.is_synthetic
   
-  rating_key          = Template.String()
+  rating_key            = Template.String()
   rating_key.is_synthetic
   
-  source_title        = Template.String()
+  source_title          = Template.String()
   source_title.is_synthetic
   
   collections.exclude_from_interface
   
-  genres.xml_tag      = 'Genre'
-  tags.xml_tag        = 'Tag'
+  genres.xml_tag        = 'Genre'
+  tags.xml_tag          = 'Tag'
   
 
 class Person(Template.Model):

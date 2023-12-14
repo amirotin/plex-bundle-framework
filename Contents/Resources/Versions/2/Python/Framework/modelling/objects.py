@@ -383,11 +383,15 @@ class ModelInterfaceObjectContainer(Container):
     root.set('size', str(len(self._objects)))
     return root
 
-def generate_class(cls, sandbox):
+def generate_class(cls, sandbox, child_types=None):
   """
     Generates a new object class linked to the given core
   """
-  generated_class = type(cls.__name__, (cls, ), dict(_sandbox = weakref.proxy(sandbox), _class_attributes = {}))
+  if child_types is None:
+    child_types = []
+  if hasattr(cls, '_child_types'):
+    child_types.extend(cls._child_types)
+  generated_class = type(cls.__name__, (cls, ), dict(_sandbox = weakref.proxy(sandbox), _class_attributes = {}, _child_types=child_types))
   return generated_class
   
     

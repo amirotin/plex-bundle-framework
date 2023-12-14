@@ -30,7 +30,7 @@ class BundleCombiner(object):
     out_path = os.path.join(root_path, '_combined', internal_path)
     
     # Apply source rules from the config
-    p_sources = self._apply_sources(p_sources, config_identifier, config_el)
+    p_sources = self._apply_sources(p_sources, config_identifier, config_el, candidates)
     name = template.__name__
     
     # Remove any sources that don't have an attribute candidate
@@ -224,13 +224,23 @@ class BundleCombiner(object):
       # TODO: Merge child attributes          
       
       elif rule_action == 'merge':
-        
+
+        # Track indexes for GUIDs.
+        guid_indexes = {}
+
         # Get candidates for each item
         item_candidate_sets = {}
         for source in p_sources:
           if source in candidates:
             for item_el in candidates[source].xpath('item'):
+              # Check for GUID-based items.
               key = item_el.get('key')
+              guid = item_el.get('guid')
+
+              if guid is not None:
+                  guid_indexes[guid] = key
+                  key = guid
+
               if key not in item_candidate_sets:
                 item_candidate_sets[key] = {}
             
@@ -275,13 +285,24 @@ class BundleCombiner(object):
           if item_el is not None:
             path = os.path.join(internal_path, process_key(key)) if cls._template.use_hashed_map_paths else None
 
+
+            # Make sure we set separate key & guid attributes if this item is GUID-based.
+            def set_item_attributes(item_el):
+                if key not in guid_indexes:
+                    if key.find('://') != -1:
+                      item_el.set('guid', key)
+                    else:
+                      item_el.set('key', key)
+                else:
+                    item_el.set('key', guid_indexes[key])
+                    item_el.set('guid', key)
+
+                if path:
+                  item_el.set('path', path)
+
             # If the map is stored internally, append the element
             if not attr._item_template._external:
-              item_el.set('key', key)
-
-              if path:
-                item_el.set('path', path)
-
+              set_item_attributes(item_el)
               attr_el.append(item_el)
               
             # If stored externally, write the element to a file and append a stub
@@ -297,11 +318,8 @@ class BundleCombiner(object):
 
               ext_el = self._core.data.xml.element('item')
               ext_el.set('external', str(True))
-              ext_el.set('key', key)
+              set_item_attributes(ext_el)
 
-              if path:
-                ext_el.set('path', path)
-              
               # Save child available date.
               try: ext_el.set('originally_available_at', item_el.xpath('//Episode/originally_available_at')[0].text)
               except: pass
@@ -375,7 +393,7 @@ class BundleCombiner(object):
     else:
       raise Framework.exceptions.FrameworkException("Unable to combine object of type "+str(type(attr)))
     
-  def _apply_sources(self, p_sources, config_identifier, config_el):
+  def _apply_sources(self, p_sources, config_identifier, config_el, candidates={}):
     sources_config = config_el.xpath('sources')
     if len(sources_config) > 0:
       sc_el = sources_config[0]
@@ -390,6 +408,13 @@ class BundleCombiner(object):
         p_sources.append(agent_el.text)
     if config_identifier not in p_sources:
       p_sources.append(config_identifier)
+      
+    # Special case for local media, return all contributors.
+    if config_identifier == 'com.plexapp.agents.localmedia' and len(sources_config) == 0:
+      for identifier in candidates.keys():
+        if identifier not in p_sources:
+          p_sources.append(identifier)
+      
     return p_sources
     
   def _get_rules(self, config_el):
@@ -403,7 +428,7 @@ class BundleCombiner(object):
     out_path = os.path.join(root_path, '_combined', internal_path)
     
     # Apply any source changes specified in the config file
-    p_sources = self._apply_sources(p_sources, config_identifier, config_el)
+    p_sources = self._apply_sources(p_sources, config_identifier, config_el, candidates)
 
     # Check for rules to apply to attributes
     rules = self._get_rules(config_el)
@@ -505,9 +530,9 @@ class BundleCombiner(object):
     # If this is a bundle from one of those agents, disable support for partial combination and
     # accept the GUID as provided.
     
-    bad_agents = ['com.plexapp.agents.lastfm', 'com.plexapp.agents.allmusic']
+    agents_that_happen_to_do_things_a_little_differently = ['com.plexapp.agents.lastfm', 'com.plexapp.agents.allmusic', 'com.plexapp.agents.plexmusic']
     
-    if identifier in bad_agents or cls._template.use_hashed_map_paths:
+    if identifier in agents_that_happen_to_do_things_a_little_differently or cls._template.use_hashed_map_paths:
       # Define an empty list of parts
       parts = []
       
