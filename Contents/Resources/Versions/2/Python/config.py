@@ -5,7 +5,7 @@
 
 
 """
-  Defaults 
+  Defaults
 """
 
 default_locale                  = 'en-us'
@@ -79,40 +79,46 @@ platforms_supporting_real_rtmp  = {
     '*': [2,4],
   },
   'Unknown': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
   },
   'Firefox': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
   },
   'Internet Explorer': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
   },
   'Opera': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
   },
   'Safari': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
   },
   'Chrome': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
+  },
+  'Chromecast': {
+    '*': [0,9,8,6],
   },
   'OmniWeb': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
   },
   'iCab': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
   },
   'Konqueror': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
   },
   'Camino': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
   },
   'Netscape': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
   },
   'Mozilla': {
-    'Web Client': [0,9,8,6],
+    '*': [0,9,8,6],
+  },
+  'Samsung': {
+    'Samsung': [0],
   },
 }
 

@@ -821,7 +821,10 @@ class Runtime(BaseComponent):
               
           # Backwards compatibility: Parse media info sent via the URL.
           if 'mediaInfo' in d:
-            context.media_info = self._core.data.json.from_string(urllib.unquote(d['mediaInfo']))
+            try:
+              context.media_info = self._core.data.json.from_string(urllib.unquote(d['mediaInfo']))
+            except:
+              pass
             del d['mediaInfo']
 
           # Flag the context as indirect if specified by a querystring arg.

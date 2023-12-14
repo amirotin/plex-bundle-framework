@@ -579,6 +579,7 @@ class ObjectContainer(Framework.modelling.objects.ModelInterfaceObjectContainer)
     'post_headers',
     'identifier',
     'shuffle_key',
+    'source_title'
   ]
   
   def _set_attribute(self, el, name, value):
@@ -612,6 +613,12 @@ class ObjectContainer(Framework.modelling.objects.ModelInterfaceObjectContainer)
     el = Framework.modelling.objects.ModelInterfaceObjectContainer._to_xml(self)
     if not (hasattr(self, 'identifier') and self.identifier != None):
       Framework.modelling.objects.ModelInterfaceObjectContainer._set_attribute(self, el, "identifier", self._core.identifier)
+
+    # If a source title isn't provided, find the first prefix handler and use its name.
+    if not (hasattr(self, 'source_title') and self.source_title != None) and self._core.identifier != 'com.plexapp.system':
+      handlers = [x for x in self._core.runtime._handlers if isinstance(x, Framework.handlers.PrefixRequestHandler)]
+      if len(handlers) > 0:
+        Framework.modelling.objects.ModelInterfaceObjectContainer._set_attribute(self, el, "sourceTitle", handlers[0].name)
     
     # Set the prefix & version for media flags
     Framework.modelling.objects.ModelInterfaceObjectContainer._set_attribute(self, el, "mediaTagPrefix", "/system/bundle/media/flags/")

@@ -173,6 +173,10 @@ class HTTPRequest(object):
 
       f = None
       try:
+
+        if 'PLEXTOKEN' in os.environ and len(os.environ['PLEXTOKEN']) > 0 and self._request_headers is not None and self._url.find('http://127.0.0.1') == 0:
+          self._request_headers['X-Plex-Token'] = os.environ['PLEXTOKEN']
+        
         req = Request(self._url, self._post_data, self._request_headers)
         req.follow_redirects = self._follow_redirects
 
@@ -423,7 +427,7 @@ class Networking(BaseComponent):
 
 
   def set_http_password(self, url, username, password, realm=None, manager=None):
-    if _global_http_auth_enabled:
+    if self._global_http_auth_enabled:
       # Strip http:// from the beginning of the url
       if url[0:7] == "http://":
         url = url[7:]
